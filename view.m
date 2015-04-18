@@ -1,6 +1,11 @@
 load -ascii fullData.txt
+<<<<<<< HEAD
 iter=400;
 N = 4096;
+=======
+iter=25;
+N = 64;
+>>>>>>> 367de5a92837f93d2eba5fa8a3eb98117f023247
 data = cell(1,iter);
 a = [];
 P = size(fullData,1);
@@ -17,6 +22,7 @@ for i=1:iter
         row = fix(p/pp)*sqrt(NP)+1;
         data{i}(row:row+sqrt(NP)-1,col:col+sqrt(NP)-1) = tmp;
     end
+<<<<<<< HEAD
     %subplot(5,5,i);
     %imagesc(data{i});
     %colormap('gray');
@@ -35,3 +41,13 @@ for k=1:nframe
 %    mov(k)=getframe(gcf);
 end
 %movie2avi(mov, '1moviename.avi', 'compression', 'None');
+=======
+    subplot(5,5,i);
+    imagesc(data{i});
+    colormap('gray');
+    axis equal;
+    xlim([0.5,8.5]);
+    ylim([0.5,8.5])
+    
+end
+>>>>>>> 367de5a92837f93d2eba5fa8a3eb98117f023247

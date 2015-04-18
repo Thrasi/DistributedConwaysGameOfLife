@@ -5,13 +5,16 @@
 #include <math.h>
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+
 #define iterations 400 /* number of iterations */
+
 #define xDim 2
 #define yDim 2
 #define xBC 1
 #define yBC 1
 #define N 4096
 #define sqrtN 64
+
 
 /* Check function. */
 void check(int rc) {
@@ -263,12 +266,14 @@ int main(int argc, char *argv[]){
 		//data[11] = 3;
 	}
 /*	if ( rank == 2) {
+
 		data[3] = 1;
 		//data[11] = 3;
 	}
 	if ( rank == 3) {
 		data[0] = 1; data[1] = 1;
 		//data[11] = 3;
+
 	}*/
 	// ghost points
 	northGhosts = (unsigned char*) calloc(Ix, sizeof(unsigned char));
@@ -361,6 +366,7 @@ int main(int argc, char *argv[]){
 		//	printf("%hhu ", totalProcessorResults[x]);
 		}
 		//printf("\n");
+
 	}
 	check(	MPI_Gather(totalProcessorResults, Ix*Iy*iterations, MPI_UNSIGNED_CHAR, picture,
 				 Ix*Iy*iterations, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD) );
@@ -381,6 +387,7 @@ int main(int argc, char *argv[]){
 			}
 			fprintf(fp, "\n");
 			//printf("\n");
+
 		}
 		fclose(fp);
 	}
