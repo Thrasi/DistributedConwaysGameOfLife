@@ -6,7 +6,7 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define iterations 1 /* number of iterations */
+#define iterations 2 /* number of iterations */
 
 /* Number of processors in each dimension */
 #define Px 2
@@ -30,38 +30,34 @@ void check(int rc) {
 	}
 }
 
-/* This calls sendRecv to communicate the edge ghost values */
-void sendRecv(void *sendbuf, void *recvbuf, int sendcount, int dest, int source, MPI_Comm TORUS_COMM) {
-	check ( MPI_Sendrecv(sendbuf, sendcount, MPI_UNSIGNED_CHAR, dest, 0,
-                			 recvbuf, sendcount, MPI_UNSIGNED_CHAR, source, 0,
-                			 TORUS_COMM, MPI_STATUS_IGNORE) );
-}
-
-void sendRecvSide(void *sendbuf, void *recvbuf, MPI_Datatype type, int dest, int source, MPI_Comm TORUS_COMM)  {
-	int sendCount = 1;
-	int tag1 = 0;
-	int tag2 = 1;
-	check (
-		 MPI_Sendrecv(sendbuf, sendCount, type, dest, tag1,
-                			 recvbuf, sendCount, type, source, tag2,
-                			 TORUS_COMM, MPI_STATUS_IGNORE)
-
-		);
-}
-
 /* Count the number of active cells around position (x,y,z) */
-int count(int ox, int oy, int oz, unsigned char data[ox][oy][oz], int x, int y, int z) {
+unsigned char count(int ox, int oy, int oz, unsigned char data[ox][oy][oz], int x, int y, int z) {
 	unsigned char c = 0;
     int dx,dy,dz;
     for (dx=-1;dx<=1;dx++) {
     	for (dy=-1;dy<=1;dy++) {
     		for (dy=-1;dy<=1;dy++) {
     			c += data[x+dx][y+dy][z+dz];
+
     		}
     	}	
     }
-    c -= data[x][y][z];
+    //c -= data[x][y][z];
 	return c;
+}
+
+void copyData(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
+				  int Ix, int Iy, int Iz, unsigned char newData[Ix][Iy][Iz], 
+				  int t, unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1]) {
+	int x, y, z;
+	for (x=0;x<Ix;x++) {
+		for (y=0;y<Iy;y++) {
+			for (z=0;z<Iz;z++) {
+				data[x+1][y+1][z+1] = newData[x][y][z];
+				totalProcessorResults[x][y][z][t] = newData[x][y][z];
+			}
+		}
+	}
 }
 
 /* Given an old cell value and a count of neighbours calculate the new one */
@@ -72,10 +68,33 @@ unsigned char transition(unsigned char c, unsigned char old) {
 		} else {
 			return 0;
 		}
-	} else if ( c == 5 ) {
+	} else if ( c == 4 ) {
 	        return 1;
 	} else {
 	        return 0;
+	}
+}
+
+void updateCenter(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
+				  int Ix, int Iy, int Iz, unsigned char newData[Ix][Iy][Iz], int rank) {
+
+	int x, y, z;
+	unsigned char c, old;
+	int xLim = Ix-1;
+	int yLim = Iy-1;
+	int zLim = Iz-1;
+
+	for (x=1;x<xLim;x++) {
+		for (y=1;y<yLim;y++) {
+			for (z=1;z<zLim;z++) {
+				c = count(ox, oy, oz, data, x+1, y+1, z+1);
+				if (rank==0){
+					printf("%d,%d,%d: %hhu\n",x+1,y+1,z+1,c);
+				}
+				old = data[x+1][y+1][z+1];
+				newData[x][y][z] = transition(c, old);
+			}
+		}
 	}
 }
 
@@ -126,6 +145,8 @@ int main(int argc, char *argv[]){
 	/* Arrays */
 	unsigned char *picture;
 	unsigned char *picData;
+
+	unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1];
 
 	unsigned char data[Ix+2][Iy+2][Iz+2];
 	memset(data, 0, sizeof data);
@@ -182,10 +203,10 @@ int main(int argc, char *argv[]){
 	/* Edges */
 	unsigned char XYBuffers[4][Iz];
 	memset(XYBuffers, 0, sizeof XYBuffers);
-	unsigned char YZnorthBuffers[4][Ix];
-	memset(YZnorthBuffers, 0, sizeof YZnorthBuffers);
-	unsigned char ZXnorthBuffers[4][Iy];
-	memset(ZXnorthBuffers, 0, sizeof ZXnorthBuffers);
+	unsigned char YZBuffers[4][Ix];
+	memset(YZBuffers, 0, sizeof YZBuffers);
+	unsigned char ZXBuffers[4][Iy];
+	memset(ZXBuffers, 0, sizeof ZXBuffers);
 
 	/* corners are enumerated in binary as their coordinates [x, y, y]  */
 	unsigned char cornerBuffers[8];
@@ -195,20 +216,37 @@ int main(int argc, char *argv[]){
 	// inital image
 	srandom(rank+1);
 	int x,y,z;
-	for (y=0;y<Iy;y++) {
-		for (x=0;x<Ix;x++) {
+	// for (y=0;y<Iy;y++) {
+	// 	for (x=0;x<Ix;x++) {
+	// 		for (z=0;z<Iz;z++) {
+	// 			data[x][y][z] = random() % 2;
+	// 		}
+	// 	}
+	// }
+
+	if (rank == 0) {
+
+		data[2][2][2] = 1;
+		data[3][3][2] = 1;
+		data[2][3][3] = 1;
+		data[3][2][3] = 1;
+	}
+
+	for (x=0;x<Ix;x++) {
+		for (y=0;y<Iy;y++) {
 			for (z=0;z<Iz;z++) {
-				data[x][y][z] = random() % 2;
+				totalProcessorResults[x][y][z][0] = data[x+1][y+1][z+1];
 			}
 		}
 	}
+
 	//printf("side ranks\n");
 	/* Side ranks */
 	check ( MPI_Cart_shift(TORUS_COMM, X, FORWARD, &Xforward, &Xbackward) );
 	check ( MPI_Cart_shift(TORUS_COMM, Y, FORWARD, &Yforward, &Ybackward) );
 	check ( MPI_Cart_shift(TORUS_COMM, Z, FORWARD, &Zforward, &Zbackward) );
 
-	unsigned char *totalProcessorResults = (unsigned char*) malloc(Ix*Iy*Iz*(iterations+1)*sizeof(unsigned char));
+	
 	//printf("createn data type\n");
 	/* Define new datatypes for communications */
 	MPI_Datatype  Xside, Yside, Zside; 
@@ -219,56 +257,35 @@ int main(int argc, char *argv[]){
 	MPI_Type_commit(&Yside);
 	MPI_Type_commit(&Zside);
 
-	MPI_Datatype tmp;
-	MPI_Type_contiguous(4, MPI_UNSIGNED_CHAR, &tmp);
-	MPI_Type_commit(&tmp);
+	MPI_Request rXforward, rXbackward, rYforward, rYbackward, rZforward, rZbackward;
 
-	int a=1;
-	int b=2;
-	unsigned char c[] = {1,1};
-	unsigned char d[] = {2,2};
-	unsigned char e[2][2];
-	unsigned char f[2][2];
-	memset(e, 0, sizeof e);
-	memset(f, 0, sizeof f);
-	MPI_Request r1, r2;
-	for (i=0;i<iterations+1;i++) {
+	for (i=1;i<=iterations;i++) {
 		//updateBuffers();
 		if (doMPI==1) {
-			if (rank==1 || rank==5) {
-			printf("Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Xforward, Xbackward);
-			//MPI_SendRecv(&a, &b, MPI_INT, Xforward, Xbackward, TORUS_COMM); // X
-			//sendRecvSide(XforwardBuffers, XbackwardGhosts, Xside, Xforward, Xbackward, TORUS_COMM); // X
-			/*check ( MPI_Sendrecv(&a, 1, MPI_INT, Xforward, 0,
-                			 &b, 1, MPI_INT, Xbackward, 0,
-                			 TORUS_COMM, MPI_STATUS_IGNORE) );*/
-			// MPI_Isend(&a, 1, MPI_INT, Xforward, 11, MPI_COMM_WORLD, &r1);
-			// MPI_Irecv(&b, 1, MPI_INT, Xbackward, 11, MPI_COMM_WORLD, &r2);
+			// if (rank==1 || rank==5) {
+			// printf("X: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Xforward, Xbackward);
+			// printf("Y: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Yforward, Ybackward);
+			// printf("Z: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Zforward, Zbackward);
 
-			// MPI_Isend(&c, 1, tmp, Xforward, 11, MPI_COMM_WORLD, &r1);
-			// MPI_Irecv(&d, 1, tmp, Xbackward, 11, MPI_COMM_WORLD, &r2);
+   //          MPI_Isend(&XforwardBuffers, 1, Xside, Xforward, 1, TORUS_COMM, &rXforward);
+			// MPI_Irecv(&XbackwardGhosts, 1, Xside, Xbackward, 1, TORUS_COMM, &rXbackward);
 
-			// MPI_Isend(&e, 1, tmp, Xforward, 11, MPI_COMM_WORLD, &r1);
-			// MPI_Irecv(&f, 1, tmp, Xbackward, 11, MPI_COMM_WORLD, &r2);
+			// MPI_Isend(&YforwardBuffers, 1, Yside, Yforward, 2, TORUS_COMM, &rYforward);
+			// MPI_Irecv(&YbackwardGhosts, 1, Yside, Ybackward, 2, TORUS_COMM, &rYbackward);
 
-            MPI_Isend(&XforwardBuffers, 1, Xside, Xforward, 11, TORUS_COMM, &r1);
-			MPI_Irecv(&XbackwardGhosts, 1, Xside, Xbackward, 11, TORUS_COMM, &r2);
+			// MPI_Isend(&ZforwardBuffers, 1, Zside, Zforward, 3, TORUS_COMM, &rZforward);
+			// MPI_Irecv(&ZbackwardGhosts, 1, Zside, Zbackward, 3, TORUS_COMM, &rZbackward);
 
-			MPI_Wait(&r1,MPI_STATUS_IGNORE);
-			MPI_Wait(&r2,MPI_STATUS_IGNORE);
+			updateCenter(Ix+2,Iy+2,Iz+2, data, Ix,Iy,Iz, newData, rank);
+
+			// MPI_Wait(&rXforward, MPI_STATUS_IGNORE);
+			// MPI_Wait(&rXbackward, MPI_STATUS_IGNORE);
+			// MPI_Wait(&rYforward, MPI_STATUS_IGNORE);
+			// MPI_Wait(&rYbackward, MPI_STATUS_IGNORE);
+			// MPI_Wait(&rZforward, MPI_STATUS_IGNORE);
+			// MPI_Wait(&rZbackward, MPI_STATUS_IGNORE);
 
 			printf("Rank %d: (%d,%d,%d)  got through 1X\n",rank,coord[0],coord[1],coord[2]);
-			}
-			/*sendRecvSide(XbackwardBuffers, XforwardGhosts, Xside, Xbackward, Xforward, TORUS_COMM); // X
-			printf("Rank %d: (%d,%d)  got through 2X\n",rank);
-			sendRecvSide(YforwardBuffers, YbackwardGhosts, Yside, Yforward, Ybackward, TORUS_COMM); // Y
-			printf("Rank %d: (%d,%d)  got through 1Y\n",rank);
-			sendRecvSide(YbackwardBuffers, YforwardGhosts, Yside, Ybackward, Yforward, TORUS_COMM); // Y
-			printf("Rank %d: (%d,%d)  got through 2Y\n",rank);
-			sendRecvSide(ZforwardBuffers, ZbackwardGhosts, Zside, Zforward, Zbackward, TORUS_COMM); // Z
-			printf("Rank %d: (%d,%d)  got through 1Z\n",rank);
-			sendRecvSide(ZbackwardBuffers, ZforwardGhosts, Zside, Zbackward, Zforward, TORUS_COMM); // Z
-			printf("Rank %d: (%d,%d)  got through 2Z\n",rank);*/
 
 			/*sendRecvEdges() // XY
 			sendRecv() // YZ
@@ -276,37 +293,41 @@ int main(int argc, char *argv[]){
 
 			sendRecv() // corners*/
 
-			/* copy buffers into data */
-
+			copyData(Ix+2,Iy+2,Iz+2, data, 
+					 Ix,Iy,Iz, newData,
+					 i, totalProcessorResults );
 		}
 	}
 
+	if (rank==0) {
+	printf("\n");
+	FILE *fp;
+	//	 Save the file. 
+	char str[15];
+	sprintf(str, "%ddata.txt",rank);
+	fp = fopen(str, "w");
+	int t;
+	fprintf(fp, "%d %d %d \n",Ix,Iy,Iz);
+	for (t=0;t<=iterations;t++) {
+		for (x=0;x<Ix;x++) {
+			for (y=0;y<Iy;y++) {
+				for (z=0;z<Iz;z++) {
+					fprintf(fp, "%d ", totalProcessorResults[x][y][z][t]);
+				}
+			}
+		}
+		fprintf(fp, "\n");
+	}
+
+	fclose(fp);
+	
+	}
 	MPI_Finalize();
 	exit(0);
 
 
 }
 
-//void copySideToData(unsigned char )
-void updateCenter(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
-				  int Ix, int Iy, int Iz, unsigned char newData[Ix][Iy][Iz]) {
-
-	int x, y, z;
-	unsigned char c, old;
-	int xLim = Ix-1;
-	int yLim = Iy-1;
-	int zLim = Iz-1;
-
-	for (x=1;x<xLim;x++) {
-		for (y=1;y<yLim;y++) {
-			for (z=1;z<zLim;z++) {
-				c = count(ox, oy, oz, data, x+1, y+1, z+1);
-				old = data[x+1][y+1][z+1];
-				newData[x][y][z] = transition(c, old);
-			}
-		}
-	}
-}
 
 
 
