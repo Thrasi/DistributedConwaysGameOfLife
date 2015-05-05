@@ -27,12 +27,17 @@ void printMap(unsigned char* A, int w, int h, int d) {
 	for (z = 0; z < d; z++) {
 		for (y = 0; y < h; y++) {
 			for (x = 0; x < w; x++) {
-				printf("%hhu ", A[z*w*h + y*w + x]);
+				if (A[z*w*h + y*w + x] == 1) {
+					printf("%d %d %d ", x, y, z);
+				}
+				//printf("%hhu ", A[z*w*h + y*w + x]);
 			}
-			printf("\n");
+			//printf("\n");
 		}
 		//printf("\n");
 	}
+	printf("\n");
+	//printf("-1 -1 -1\n");
 }
 
 void neighbours(int x, int y, int z, int w, int h, int d, int* coords) {
@@ -95,6 +100,7 @@ int main() {
 	}
 	
 
+	printf("%d %d %d %d\n", MAXITER+1, w, h, d);
 	printMap(A, w, h, d);
 
 	for (it = 0; it < MAXITER; it++) {

@@ -1,3 +1,5 @@
+% DONT USE THIS
+
 load 0data.txt
 
 a = reshape(X0data(1,:),[5 5 5]);
