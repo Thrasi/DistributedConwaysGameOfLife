@@ -1,9 +1,9 @@
-metadata = num2cell(load('metainfodata.txt'));
+metadata = num2cell(load('data/metainfodata.txt'));
 [R, it, w, h, d] = deal(metadata{:});
 
 data = cell(R, it);
 for i = 1:R
-    file = fopen([num2str(i-1) 'data.txt'], 'r');
+    file = fopen(['data/' num2str(i-1) 'data.txt'], 'r');
     f_data = textscan(file, '%s', it, 'Delimiter', '\n');
     f_data = f_data{1};
     for j = 1:it
@@ -23,6 +23,7 @@ for j = 1:it
             voxel(m(:,i), [1,1,1], 'r', 0.7);
         end
     end
+    grid on
     axis([0 w 0 h 0 d]);
     pause(0.3);
 end
