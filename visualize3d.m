@@ -17,17 +17,19 @@ for j = 1:it
     xs = zeros(N, 1);
     ys = zeros(N, 1);
     zs = zeros(N, 1);
+    clf;
     for i = 1:N
         id = ids(i);
         zs(i) = floor(id / (w*h));
         id = mod(id, w*h);
         ys(i) = floor(id / w);
         xs(i) = mod(id, w);
+        voxel([xs(i), ys(i), zs(i)], [1,1,1], 'r', 0.7);
     end
 
-    scatter3(xs, ys, zs, 225*ones([N, 1]), 's', 'filled');
+    %scatter3(xs, ys, zs, 225*ones([N, 1]), 's', 'filled');
     axis([0 w 0 h 0 d]);
-    %axis image
+    %axis equal
     pause(0.3);
     %figure;
 end
