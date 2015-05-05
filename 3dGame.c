@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "updateFunctions.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
@@ -35,21 +36,6 @@ void check(int rc) {
 	}
 }
 
-/* Count the number of active cells around position (x,y,z) */
-unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz], int x, int y, int z) {
-	unsigned char c = 0;
-    int dx,dy,dz;
-    for (dx=-1;dx<=1;dx++) {
-    	for (dy=-1;dy<=1;dy++) {
-    		for (dz=-1;dz<=1;dz++) {
-    			c += data[x+dx][y+dy][z+dz];
-    		}
-    	}	
-    }
-    c -= data[x][y][z];
-	return c;
-}
-
 void copyData(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
 				   unsigned char newData[Ix][Iy][Iz], 
 				  int t, unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1]) {
@@ -64,128 +50,9 @@ void copyData(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
 	}
 }
 
-/* Given an old cell value and a count of neighbours calculate the new one */
-unsigned char transition(unsigned char c, unsigned char old) {
-	if ( old == 1) {
-		if ( c == 4 || c == 5 ) {
-			return 1;
-		} else {
-			return 0;
-		}
-	} else if ( c == 4 ) {
-	        return 1;
-	} else {
-	        return 0;
-	}
-}
 
-void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
-				   unsigned char newData[Ix][Iy][Iz], int rank) {
 
-	int x, y, z;
-	unsigned char c, old;
-	int xLim = Ix-1;
-	int yLim = Iy-1;
-	int zLim = Iz-1;
 
-	for (x=1;x<xLim;x++) {
-		for (y=1;y<yLim;y++) {
-			for (z=1;z<zLim;z++) {
-				c = count(Ix, Iy, Iz, data, x, y, z);
-				// if (rank==0){
-				// 	printf("%d,%d,%d: %hhu\n",x+1,y+1,z+1,c);
-				// }
-				old = data[x][y][z];
-				newData[x][y][z] = transition(c, old);
-			}
-		}
-	}
-}
-
-void updateXside(int Ix, int Iy, int Iz, unsigned char Xside[Iy][Iz], unsigned char data[Ix][Iy][Iz],
-					unsigned char newData[Ix][Iy][Iz], int direction, int rank) {
-	int x,y,z;
-	if (direction > 1) {
-		x = Ix-2;
-	} else {
-		x = 0;
-	}
-
-	int yLim = Iy-1;
-	int zLim = Iz-1;
-	unsigned char c, old;
-    int dx,dy,dz;
-	for (y=1;y<yLim;y++) {
-		for (z=1;z<zLim;z++) {
-			c = 0;
-			// 18 from data
-		    for (dx=0;dx<=1;dx++) {
-		    	for (dy=-1;dy<=1;dy++) {
-		    		for (dz=-1;dz<=1;dz++) {
-		    			c += data[x+dx][y+dy][z+dz];
-		    		}
-		    	}	
-		    }
-		    // 9 from 
-		    for (dy=-1;dy<=1;dy++) {
-	    		for (dz=-1;dz<=1;dz++) {
-	    			c += Xside[y+dy][z+dz];
-	    		}
-	    	}
-
-		    c -= data[x][y][z];
-
-			old = data[x][y][z];
-			// if (rank==5){
-			// 	printf("%d,%d,%d: %hhu\n",x,y,z,c);
-			// }
-			newData[x][y][z] = transition(c, old);
-		}
-	}
-}
-
-void updateYside(int Ix, int Iy, int Iz, unsigned char Xside[Iz][Ix], unsigned char data[Ix][Iy][Iz],
-					unsigned char newData[Ix][Iy][Iz], int direction, int rank) {
-	int x,y,z;
-	if (direction > 1) {
-		y = Iy-2;
-	} else {
-		y = 0;
-	}
-
-	
-	int xLim = Ix-1;
-	int zLim = Iz-1;
-	unsigned char c, old;
-    int dx,dy,dz;
-	for (x=1;x<xLim;x++) {
-		for (z=1;z<zLim;z++) {
-			c = 0;
-			// 18 from data
-		    for (dx=0;dx<=1;dx++) {
-		    	for (dy=-1;dy<=1;dy++) {
-		    		for (dz=-1;dz<=1;dz++) {
-		    			c += data[x+dx][y+dy][z+dz];
-		    		}
-		    	}	
-		    }
-		    // 9 from 
-		    for (dy=-1;dy<=1;dy++) {
-	    		for (dz=-1;dz<=1;dz++) {
-	    			c += Xside[y+dy][z+dz];
-	    		}
-	    	}
-
-		    c -= data[x][y][z];
-
-			old = data[x][y][z];
-			// if (rank==5){
-			// 	printf("%d,%d,%d: %hhu\n",x,y,z,c);
-			// }
-			newData[x][y][z] = transition(c, old);
-		}
-	}
-}
 
 int main(int argc, char *argv[]){
 	//printf("start\n");
