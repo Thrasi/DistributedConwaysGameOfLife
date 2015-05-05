@@ -6,7 +6,7 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define iterations 2 /* number of iterations */
+#define iterations 1 /* number of iterations */
 
 /* Number of processors in each dimension */
 #define Px 2
@@ -23,6 +23,11 @@
 #define yN 10
 #define zN 10
 
+/**/
+#define X 0
+#define Y 1
+#define Z 2
+
 /* Check function. */
 void check(int rc) {
 	if (rc != MPI_SUCCESS) {
@@ -31,29 +36,28 @@ void check(int rc) {
 }
 
 /* Count the number of active cells around position (x,y,z) */
-unsigned char count(int ox, int oy, int oz, unsigned char data[ox][oy][oz], int x, int y, int z) {
+unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz], int x, int y, int z) {
 	unsigned char c = 0;
     int dx,dy,dz;
     for (dx=-1;dx<=1;dx++) {
     	for (dy=-1;dy<=1;dy++) {
-    		for (dy=-1;dy<=1;dy++) {
+    		for (dz=-1;dz<=1;dz++) {
     			c += data[x+dx][y+dy][z+dz];
-
     		}
     	}	
     }
-    //c -= data[x][y][z];
+    c -= data[x][y][z];
 	return c;
 }
 
-void copyData(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
-				  int Ix, int Iy, int Iz, unsigned char newData[Ix][Iy][Iz], 
+void copyData(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
+				   unsigned char newData[Ix][Iy][Iz], 
 				  int t, unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1]) {
 	int x, y, z;
 	for (x=0;x<Ix;x++) {
 		for (y=0;y<Iy;y++) {
 			for (z=0;z<Iz;z++) {
-				data[x+1][y+1][z+1] = newData[x][y][z];
+				data[x][y][z] = newData[x][y][z];
 				totalProcessorResults[x][y][z][t] = newData[x][y][z];
 			}
 		}
@@ -75,8 +79,8 @@ unsigned char transition(unsigned char c, unsigned char old) {
 	}
 }
 
-void updateCenter(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
-				  int Ix, int Iy, int Iz, unsigned char newData[Ix][Iy][Iz], int rank) {
+void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
+				   unsigned char newData[Ix][Iy][Iz], int rank) {
 
 	int x, y, z;
 	unsigned char c, old;
@@ -87,13 +91,98 @@ void updateCenter(int ox, int oy, int oz, unsigned char data[ox][oy][oz],
 	for (x=1;x<xLim;x++) {
 		for (y=1;y<yLim;y++) {
 			for (z=1;z<zLim;z++) {
-				c = count(ox, oy, oz, data, x+1, y+1, z+1);
-				if (rank==0){
-					printf("%d,%d,%d: %hhu\n",x+1,y+1,z+1,c);
-				}
-				old = data[x+1][y+1][z+1];
+				c = count(Ix, Iy, Iz, data, x, y, z);
+				// if (rank==0){
+				// 	printf("%d,%d,%d: %hhu\n",x+1,y+1,z+1,c);
+				// }
+				old = data[x][y][z];
 				newData[x][y][z] = transition(c, old);
 			}
+		}
+	}
+}
+
+void updateXside(int Ix, int Iy, int Iz, unsigned char Xside[Iy][Iz], unsigned char data[Ix][Iy][Iz],
+					unsigned char newData[Ix][Iy][Iz], int direction, int rank) {
+	int x,y,z;
+	if (direction > 1) {
+		x = Ix-2;
+	} else {
+		x = 0;
+	}
+
+	int yLim = Iy-1;
+	int zLim = Iz-1;
+	unsigned char c, old;
+    int dx,dy,dz;
+	for (y=1;y<yLim;y++) {
+		for (z=1;z<zLim;z++) {
+			c = 0;
+			// 18 from data
+		    for (dx=0;dx<=1;dx++) {
+		    	for (dy=-1;dy<=1;dy++) {
+		    		for (dz=-1;dz<=1;dz++) {
+		    			c += data[x+dx][y+dy][z+dz];
+		    		}
+		    	}	
+		    }
+		    // 9 from 
+		    for (dy=-1;dy<=1;dy++) {
+	    		for (dz=-1;dz<=1;dz++) {
+	    			c += Xside[y+dy][z+dz];
+	    		}
+	    	}
+
+		    c -= data[x][y][z];
+
+			old = data[x][y][z];
+			// if (rank==5){
+			// 	printf("%d,%d,%d: %hhu\n",x,y,z,c);
+			// }
+			newData[x][y][z] = transition(c, old);
+		}
+	}
+}
+
+void updateYside(int Ix, int Iy, int Iz, unsigned char Xside[Iz][Ix], unsigned char data[Ix][Iy][Iz],
+					unsigned char newData[Ix][Iy][Iz], int direction, int rank) {
+	int x,y,z;
+	if (direction > 1) {
+		y = Iy-2;
+	} else {
+		y = 0;
+	}
+
+	
+	int xLim = Ix-1;
+	int zLim = Iz-1;
+	unsigned char c, old;
+    int dx,dy,dz;
+	for (x=1;x<xLim;x++) {
+		for (z=1;z<zLim;z++) {
+			c = 0;
+			// 18 from data
+		    for (dx=0;dx<=1;dx++) {
+		    	for (dy=-1;dy<=1;dy++) {
+		    		for (dz=-1;dz<=1;dz++) {
+		    			c += data[x+dx][y+dy][z+dz];
+		    		}
+		    	}	
+		    }
+		    // 9 from 
+		    for (dy=-1;dy<=1;dy++) {
+	    		for (dz=-1;dz<=1;dz++) {
+	    			c += Xside[y+dy][z+dz];
+	    		}
+	    	}
+
+		    c -= data[x][y][z];
+
+			old = data[x][y][z];
+			// if (rank==5){
+			// 	printf("%d,%d,%d: %hhu\n",x,y,z,c);
+			// }
+			newData[x][y][z] = transition(c, old);
 		}
 	}
 }
@@ -106,7 +195,7 @@ int main(int argc, char *argv[]){
 	int Ny, Ly, Ry, Iy;
 	int Nz, Lz, Rz, Iz;
 	int Xforward, Xbackward, Yforward, Ybackward, Zforward, Zbackward; 
-	int X = 0, Y = 1, Z = 2, FORWARD = 1, BACKWARDS = -1;
+	int  FORWARD = 1, BACKWARDS = -1;
     int dim[3], period[3], reorder;
     int coord[3], id;
     int doMPI = 1;
@@ -143,12 +232,10 @@ int main(int argc, char *argv[]){
 
 	//printf("declerations\n");
 	/* Arrays */
-	unsigned char *picture;
-	unsigned char *picData;
 
 	unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1];
 
-	unsigned char data[Ix+2][Iy+2][Iz+2];
+	unsigned char data[Ix][Iy][Iz];
 	memset(data, 0, sizeof data);
 	unsigned char newData[Ix][Iy][Iz];
 	memset(newData, 0, sizeof newData);
@@ -231,11 +318,18 @@ int main(int argc, char *argv[]){
 		data[2][3][3] = 1;
 		data[3][2][3] = 1;
 	}
+	if (rank == 1) {
+		XforwardBuffers[1][1] = 1;
+		XforwardBuffers[1][2] = 1;
+		XforwardBuffers[1][3] = 1;
+		XforwardBuffers[2][2] = 1;
+	}
+
 
 	for (x=0;x<Ix;x++) {
 		for (y=0;y<Iy;y++) {
 			for (z=0;z<Iz;z++) {
-				totalProcessorResults[x][y][z][0] = data[x+1][y+1][z+1];
+				totalProcessorResults[x][y][z][0] = data[x][y][z];
 			}
 		}
 	}
@@ -258,7 +352,15 @@ int main(int argc, char *argv[]){
 	MPI_Type_commit(&Zside);
 
 	MPI_Request rXforward, rXbackward, rYforward, rYbackward, rZforward, rZbackward;
-
+	if (rank == 1) {
+		for (y=0;y<Iy;y++) {
+			for (z=0;z<Iz;z++) {
+				printf("%d, ",XforwardBuffers[y][z]);
+			}
+			printf("\n");
+		}
+	}
+	printf("\n");
 	for (i=1;i<=iterations;i++) {
 		//updateBuffers();
 		if (doMPI==1) {
@@ -267,25 +369,40 @@ int main(int argc, char *argv[]){
 			// printf("Y: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Yforward, Ybackward);
 			// printf("Z: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Zforward, Zbackward);
 
-   //          MPI_Isend(&XforwardBuffers, 1, Xside, Xforward, 1, TORUS_COMM, &rXforward);
-			// MPI_Irecv(&XbackwardGhosts, 1, Xside, Xbackward, 1, TORUS_COMM, &rXbackward);
+			MPI_Isend(&XforwardBuffers, 1, Xside, Xforward, 1, TORUS_COMM, &rXforward);
+			MPI_Irecv(&XbackwardGhosts, 1, Xside, Xbackward, 1, TORUS_COMM, &rXbackward);
 
 			// MPI_Isend(&YforwardBuffers, 1, Yside, Yforward, 2, TORUS_COMM, &rYforward);
 			// MPI_Irecv(&YbackwardGhosts, 1, Yside, Ybackward, 2, TORUS_COMM, &rYbackward);
 
 			// MPI_Isend(&ZforwardBuffers, 1, Zside, Zforward, 3, TORUS_COMM, &rZforward);
 			// MPI_Irecv(&ZbackwardGhosts, 1, Zside, Zbackward, 3, TORUS_COMM, &rZbackward);
+			// if (rank==0) {
+			// 	printf("step %d",i);
+			// }
+			updateCenter(Ix,Iy,Iz, data, newData, rank);
 
-			updateCenter(Ix+2,Iy+2,Iz+2, data, Ix,Iy,Iz, newData, rank);
+			MPI_Wait(&rXforward, MPI_STATUS_IGNORE);
+			MPI_Wait(&rXbackward, MPI_STATUS_IGNORE);
 
-			// MPI_Wait(&rXforward, MPI_STATUS_IGNORE);
-			// MPI_Wait(&rXbackward, MPI_STATUS_IGNORE);
+			//updateXside(Ix, Iy, Iz, XbackwardGhosts, data, newData, BACKWARDS, rank);
+			
+			if (rank == 5) {
+				updateXside(Ix, Iy, Iz, XbackwardGhosts, data, newData, BACKWARDS, rank);
+
+				for (y=0;y<Iy;y++) {
+					for (z=0;z<Iz;z++) {
+						printf("%d, ",XbackwardGhosts[y][z]);
+					}
+					printf("\n");
+				}
+			}
 			// MPI_Wait(&rYforward, MPI_STATUS_IGNORE);
 			// MPI_Wait(&rYbackward, MPI_STATUS_IGNORE);
 			// MPI_Wait(&rZforward, MPI_STATUS_IGNORE);
 			// MPI_Wait(&rZbackward, MPI_STATUS_IGNORE);
 
-			printf("Rank %d: (%d,%d,%d)  got through 1X\n",rank,coord[0],coord[1],coord[2]);
+			//printf("Rank %d: (%d,%d,%d)  got through 1X\n",rank,coord[0],coord[1],coord[2]);
 
 			/*sendRecvEdges() // XY
 			sendRecv() // YZ
@@ -293,26 +410,56 @@ int main(int argc, char *argv[]){
 
 			sendRecv() // corners*/
 
-			copyData(Ix+2,Iy+2,Iz+2, data, 
-					 Ix,Iy,Iz, newData,
+			copyData(Ix,Iy,Iz, data, newData,
 					 i, totalProcessorResults );
+			if (rank == 5) {
+				printf("newData\n");
+				for (y=0;y<Iy;y++) {
+					for (z=0;z<Iz;z++) {
+						printf("%d, ",newData[0][y][z]);
+					}
+					printf("\n");
+				}
+				printf("data\n");
+				for (y=0;y<Iy;y++) {
+					for (z=0;z<Iz;z++) {
+						printf("%d, ",data[0][y][z]);
+					}
+					printf("\n");
+				}
+			}
 		}
 	}
 
-	if (rank==0) {
-	printf("\n");
+
 	FILE *fp;
+	if (rank==0) {
+		char str[25];
+		sprintf(str, "data/metainfodata.txt");
+		fp = fopen(str, "w");
+		fprintf(fp, "%d %d %d %d %d \n",size,iterations+1, xN,yN,zN);
+		fclose(fp);
+
+	}	
+	
+	printf("\n");
 	//	 Save the file. 
-	char str[15];
-	sprintf(str, "%ddata.txt",rank);
+	char str[25];
+	sprintf(str, "data/%ddata.txt",rank);
 	fp = fopen(str, "w");
 	int t;
-	fprintf(fp, "%d %d %d \n",Ix,Iy,Iz);
+	
+	int dx = coord[0]*Lx + MIN(coord[0], Rx);
+	int dy = coord[1]*Ly + MIN(coord[1], Ry);
+	int dz = coord[2]*Lz + MIN(coord[2], Rz);
 	for (t=0;t<=iterations;t++) {
 		for (x=0;x<Ix;x++) {
 			for (y=0;y<Iy;y++) {
 				for (z=0;z<Iz;z++) {
-					fprintf(fp, "%d ", totalProcessorResults[x][y][z][t]);
+					//fprintf(fp, "%d ", totalProcessorResults[x][y][z][t]);
+					if ( totalProcessorResults[x][y][z][t]) {
+						fprintf(fp, "%d %d %d ", x+dx, y+dy, z+dz);
+					}
 				}
 			}
 		}
@@ -321,7 +468,7 @@ int main(int argc, char *argv[]){
 
 	fclose(fp);
 	
-	}
+	
 	MPI_Finalize();
 	exit(0);
 
