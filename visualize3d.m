@@ -23,6 +23,7 @@ for j = 1:it
             voxel(m(:,i), [1,1,1], 'r', 0.7);
         end
     end
+    grid on
     axis([0 w 0 h 0 d]);
     pause(0.3);
 end
