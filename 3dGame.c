@@ -108,21 +108,7 @@ int main(int argc, char *argv[]){
 	memset(newData, 0, sizeof newData);
 
 	/* Receive buffers */
-	/* Sides */
-	unsigned char XforwardGhosts[Iy][Iz];
-	memset(XforwardGhosts, 0, sizeof XforwardGhosts);
-	unsigned char XbackwardGhosts[Iy][Iz];
-	memset(XbackwardGhosts, 0, sizeof XbackwardGhosts);
 
-	unsigned char YforwardGhosts[Iz][Ix];
-	memset(YforwardGhosts, 0, sizeof YforwardGhosts);
-	unsigned char YbackwardGhosts[Iz][Ix];
-	memset(YbackwardGhosts, 0, sizeof YbackwardGhosts);
-
-	unsigned char ZforwardGhosts[Ix][Iy];
-	memset(ZforwardGhosts, 0, sizeof ZforwardGhosts);
-	unsigned char ZbackwardGhosts[Ix][Iy];
-	memset(ZbackwardGhosts, 0, sizeof ZbackwardGhosts);
 
 	/* Edges */
 	unsigned char XYGhosts[4][Iz];
@@ -137,21 +123,7 @@ int main(int argc, char *argv[]){
 	memset(cornerGhosts, 0, sizeof cornerGhosts);
 
 	/* Send buffers */
-	/* Sides */
-	unsigned char XforwardBuffers[Iy][Iz];
-	memset(XforwardBuffers, 0, sizeof XforwardBuffers);
-	unsigned char XbackwardBuffers[Iy][Iz];
-	memset(XbackwardBuffers, 0, sizeof XbackwardBuffers);
 	
-	unsigned char YforwardBuffers[Iz][Ix];
-	memset(YforwardBuffers, 0, sizeof YforwardBuffers);
-	unsigned char YbackwardBuffers[Iz][Ix];
-	memset(YbackwardBuffers, 0, sizeof YbackwardBuffers);
-
-	unsigned char ZforwardBuffers[Ix][Iy];
-	memset(ZforwardBuffers, 0, sizeof ZforwardBuffers);
-	unsigned char ZbackwardBuffers[Ix][Iy];
-	memset(ZbackwardBuffers, 0, sizeof ZbackwardBuffers);
 
 
 	/* Edges */
@@ -253,15 +225,40 @@ int main(int argc, char *argv[]){
 	check ( MPI_Cart_shift(TORUS_COMM, X, FORWARD, &Xforward, &Xbackward) );
 	check ( MPI_Cart_shift(TORUS_COMM, Y, FORWARD, &Yforward, &Ybackward) );
 	check ( MPI_Cart_shift(TORUS_COMM, Z, FORWARD, &Zforward, &Zbackward) );
+	int dest, source;
+	int XYprocs[4];
+	int YZprocs[4];
+	int ZXprocs[4];
+	
+	int d, dd;
+	i=0;
+
+
+	// TODO: don't use loop! fDat
+	for (d=-1;d<=1,d=d+2) {
+		for (dd=-1;dd<=1,dd=dd+2) {
+			int procCoords[3] = {coord[0]+d, coord[1]+dd, coord[2]};
+			check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[i]) );
+			i++;
+		}
+	}
+			int destCoord[2] = {coord[0]+dx, coord[1]+dy};
+			int sourceCoord[2] = {coord[0]-dx, coord[1]-dy};
+
+			check ( MPI_Cart_rank(TORUS_COMM, destCoord, &dest) );
+			check ( MPI_Cart_rank(TORUS_COMM, sourceCoord, &source) );
+
 
 	
 	//printf("createn data type\n");
 	/* Define new datatypes for communications */
-	MPI_Datatype  Xside, XsideRecv, Yside, YsideRecv, Zside, ZforwardRecv, ZbackwardRecv; 
-	// int MPI_Type_vector(int count, int blocklength, int stride, MPI_Datatype oldtype, MPI_Datatype *newtype)
+	MPI_Datatype Xside, XsideRecv, Yside, YsideRecv, Zside, ZforwardRecv, ZbackwardRecv;
+	MPI_Datatype XYedge, YZedge, YZedgeRecv, ZXedge, ZXedgeRecv;
+	
 
 
 	/* Custom datatypes for sending and receiving X and Y sides */
+	// MPI_Type_vector(int count, int blocklength, int stride, MPI_Datatype oldtype, MPI_Datatype *newtype)
 	MPI_Type_vector(Iy, Iz, Ix, MPI_UNSIGNED_CHAR, &Xside);
 	MPI_Type_commit(&Xside);
 
@@ -302,10 +299,29 @@ int main(int argc, char *argv[]){
 	MPI_Type_commit(&ZbackwardRecv);
 	MPI_Type_commit(&ZforwardRecv);
 
+	/* Custom data types for edges */
+	/* XY edge */
+	MPI_Type_vector(1, Iz, Iz, MPI_UNSIGNED_CHAR, &XYedge);
+	MPI_Type_commit(&XYedge);
+
+	/* YZ edge */
+	MPI_Type_vector(Ix, 1, Iz*Iy, MPI_UNSIGNED_CHAR, &XYedge);
+	MPI_Type_commit(&XYedge);
+	MPI_Type_vector(Ix, 1, (Iz+2)*(Iy+2), MPI_UNSIGNED_CHAR, &XYedgeRecv);
+	MPI_Type_commit(&XYedgeRecv);
+
+	/* ZX edge */
+	MPI_Type_vector(Iy, 1, Iz, MPI_UNSIGNED_CHAR, &ZXedge);
+	MPI_Type_commit(&XYedge);
+	MPI_Type_vector(Iy, 1, (Iz+2), MPI_UNSIGNED_CHAR, &ZXedgeRecv);
+	MPI_Type_commit(&XYedgeRecv);
+
+
+	
 
 	/* Request arrays for the wait command 
 	 * [0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25]
-	 * [xf xb yf yb zf zb] */
+	 * [xf xb yf yb zf zb ] */
 	MPI_Request sendRequests[26];
 	MPI_Request recvRequests[26];
 	if (rank == 1) {
@@ -382,13 +398,12 @@ int main(int argc, char *argv[]){
 
 			MPI_Isend(&newData[0][0][0], 1, Zside, Zbackward, 1, TORUS_COMM, &sendRequests[5]);
 			MPI_Irecv(&data[0][0][0], 1, ZforwardRecv, Zforward, 1, TORUS_COMM, &recvRequests[4]);
+
+			/* XY edges communication */
+			
 			
 
-			updateCenter(Ix,Iy,Iz, data, newData, rank);
-
-			
-			
-			
+			updateCenter(Ix,Iy,Iz, data, newData, rank);			
 
 			MPI_Wait(&sendRequests[0], MPI_STATUS_IGNORE);
 			MPI_Wait(&sendRequests[1], MPI_STATUS_IGNORE);
