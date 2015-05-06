@@ -12,7 +12,15 @@ void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix][Iy][Iz],
 				   unsigned char newData[Ix][Iy][Iz], int rank);
 
 /* calculate the new values of the sides in the X direction*/
-void updateXside(int Ix, int Iy, int Iz, unsigned char Xside[Iy][Iz], unsigned char data[Ix][Iy][Iz],
-					unsigned char newData[Ix][Iy][Iz], int direction, int rank);
+void updateXside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int X, int rank);
+
+/* calculate the new values of the sides in the X direction*/
+void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Y, int rank);
+
+/* calculate the new values of the sides in the X direction*/
+void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Z, int rank);
 
 #endif
