@@ -7,7 +7,7 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define iterations 5 /* number of iterations */
+#define iterations 1 /* number of iterations */
 
 /* Number of processors in each dimension */
 #define Px 2
@@ -193,21 +193,45 @@ int main(int argc, char *argv[]){
 		// }
 	}
 
+		//side oscillating
+	// newData[2][2][0] = 1;
+	// newData[3][3][0] = 1;
+	// newData[2][3][4] = 1;
+	// newData[3][2][4] = 1;
 
-	newData[2][2][0] = 1;
-	newData[3][3][0] = 1;
-	newData[2][3][4] = 1;
-	newData[3][2][4] = 1;
+	// newData[2][0][2] = 1;
+	// newData[3][4][2] = 1;
+	// newData[2][4][3] = 1;
+	// newData[3][0][3] = 1;
 
-	newData[2][0][2] = 1;
-	newData[3][4][2] = 1;
-	newData[2][4][3] = 1;
-	newData[3][0][3] = 1;
+	// newData[0][2][2] = 1;
+	// newData[4][3][2] = 1;
+	// newData[0][3][3] = 1;
+	// newData[4][2][3] = 1;
 
-	newData[0][2][2] = 1;
-	newData[4][3][2] = 1;
-	newData[0][3][3] = 1;
-	newData[4][2][3] = 1;
+	newData[0][0][0] = 1;
+	newData[0][0][1] = 2;
+	newData[0][0][2] = 3;
+	newData[0][0][3] = 4;
+	newData[0][0][4] = 5;
+
+	newData[0][4][0] = 6;
+	newData[0][4][1] = 7;
+	newData[0][4][2] = 8;
+	newData[0][4][3] = 9;
+	newData[0][4][4] = 10;
+
+	newData[4][0][0] = 11;
+	newData[4][0][1] = 12;
+	newData[4][0][2] = 13;
+	newData[4][0][3] = 14;
+	newData[4][0][4] = 15;
+
+	newData[4][4][0] = 16;
+	newData[4][4][1] = 17;
+	newData[4][4][2] = 18;
+	newData[4][4][3] = 19;
+	newData[4][4][4] = 20;
 
 	copyData(Ix,Iy,Iz, data, newData,
 					 0, totalProcessorResults );
@@ -235,20 +259,36 @@ int main(int argc, char *argv[]){
 
 
 	// TODO: don't use loop! fDat
-	for (d=-1;d<=1,d=d+2) {
-		for (dd=-1;dd<=1,dd=dd+2) {
-			int procCoords[3] = {coord[0]+d, coord[1]+dd, coord[2]};
-			check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[i]) );
-			i++;
-		}
-	}
-			int destCoord[2] = {coord[0]+dx, coord[1]+dy};
-			int sourceCoord[2] = {coord[0]-dx, coord[1]-dy};
 
-			check ( MPI_Cart_rank(TORUS_COMM, destCoord, &dest) );
-			check ( MPI_Cart_rank(TORUS_COMM, sourceCoord, &source) );
+	/* get ranks of diagonal processors in the XY plane */
+	int procCoords[3] = {coord[0]-1, coord[1]-1, coord[2]};
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[0]) );
+	procCoords[0] = coord[0]-1; procCoords[1] = coord[1]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[1]) );
+	procCoords[0] = coord[0]+1; procCoords[1] = coord[1]-1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[2]) );
+	procCoords[0] = coord[0]+1; procCoords[1] = coord[1]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &XYprocs[3]) );
 
+	/* get ranks of diagonal processors in the YZ plane */
+	procCoords[1] = coord[1]-1; procCoords[2] = coord[2]-1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &YZprocs[0]) );
+	procCoords[1] = coord[1]-1; procCoords[2] = coord[2]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &YZprocs[1]) );
+	procCoords[1] = coord[1]+1; procCoords[2] = coord[2]-1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &YZprocs[2]) );
+	procCoords[1] = coord[1]+1; procCoords[2] = coord[2]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &YZprocs[3]) );
 
+	/* get ranks of diagonal processors in the ZX plane */
+	procCoords[0] = coord[0]-1; procCoords[2] = coord[2]-1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &ZXprocs[0]) );
+	procCoords[0] = coord[0]-1; procCoords[2] = coord[2]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &ZXprocs[1]) );
+	procCoords[0] = coord[0]+1; procCoords[2] = coord[2]-1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &ZXprocs[2]) );
+	procCoords[0] = coord[0]+1; procCoords[2] = coord[2]+1;
+	check ( MPI_Cart_rank(TORUS_COMM, procCoords, &ZXprocs[3]) );
 	
 	//printf("createn data type\n");
 	/* Define new datatypes for communications */
@@ -301,20 +341,20 @@ int main(int argc, char *argv[]){
 
 	/* Custom data types for edges */
 	/* XY edge */
-	MPI_Type_vector(1, Iz, Iz, MPI_UNSIGNED_CHAR, &XYedge);
+	MPI_Type_vector(1, Iz, Iz+2, MPI_UNSIGNED_CHAR, &XYedge);
 	MPI_Type_commit(&XYedge);
 
 	/* YZ edge */
-	MPI_Type_vector(Ix, 1, Iz*Iy, MPI_UNSIGNED_CHAR, &XYedge);
-	MPI_Type_commit(&XYedge);
-	MPI_Type_vector(Ix, 1, (Iz+2)*(Iy+2), MPI_UNSIGNED_CHAR, &XYedgeRecv);
-	MPI_Type_commit(&XYedgeRecv);
+	MPI_Type_vector(Ix, 1, Iz*Iy, MPI_UNSIGNED_CHAR, &YZedge);
+	MPI_Type_commit(&YZedge);
+	MPI_Type_vector(Ix, 1, (Iz+2)*(Iy+2), MPI_UNSIGNED_CHAR, &YZedgeRecv);
+	MPI_Type_commit(&YZedgeRecv);
 
 	/* ZX edge */
 	MPI_Type_vector(Iy, 1, Iz, MPI_UNSIGNED_CHAR, &ZXedge);
-	MPI_Type_commit(&XYedge);
+	MPI_Type_commit(&ZXedge);
 	MPI_Type_vector(Iy, 1, (Iz+2), MPI_UNSIGNED_CHAR, &ZXedgeRecv);
-	MPI_Type_commit(&XYedgeRecv);
+	MPI_Type_commit(&ZXedgeRecv);
 
 
 	
@@ -324,7 +364,7 @@ int main(int argc, char *argv[]){
 	 * [xf xb yf yb zf zb ] */
 	MPI_Request sendRequests[26];
 	MPI_Request recvRequests[26];
-	if (rank == 1) {
+	if (rank == 0) {
 		// for (x=0;x<Ix;x++) {
 		// 	for (y=0;y<Iy;y++) {
 		// 		for (z=0;z<Iz;z++) {
@@ -378,56 +418,78 @@ int main(int argc, char *argv[]){
 			// printf("Y: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Yforward, Ybackward);
 			// printf("Z: Rank %d: (%d,%d,%d) sends to %d, receives from %d\n",rank,coord[0],coord[1],coord[2],Zforward, Zbackward);
 
-			/* X side communications */
-			MPI_Isend(&newData[Ix-1][0][0], 1, Xside, Xforward, 1, TORUS_COMM, &sendRequests[0]);
-			MPI_Irecv(&data[0][1][1], 1, XsideRecv, Xbackward, 1, TORUS_COMM, &recvRequests[1]);
+			// /* X side communications */
+			// MPI_Isend(&newData[Ix-1][0][0], 1, Xside, Xforward, 1, TORUS_COMM, &sendRequests[0]);
+			// MPI_Irecv(&data[0][1][1], 1, XsideRecv, Xbackward, 1, TORUS_COMM, &recvRequests[1]);
 
-			MPI_Isend(&newData[0][0][0], 1, Xside, Xbackward, 1, TORUS_COMM, &sendRequests[1]);
-			MPI_Irecv(&data[Ix+1][1][1], 1, XsideRecv, Xforward, 1, TORUS_COMM, &recvRequests[0]);
+			// MPI_Isend(&newData[0][0][0], 1, Xside, Xbackward, 1, TORUS_COMM, &sendRequests[1]);
+			// MPI_Irecv(&data[Ix+1][1][1], 1, XsideRecv, Xforward, 1, TORUS_COMM, &recvRequests[0]);
 
-			/* Y side communications */
-			MPI_Isend(&newData[0][Iy-1][0], 1, Yside, Yforward, 1, TORUS_COMM, &sendRequests[2]);
-			MPI_Irecv(&data[1][0][1], 1, YsideRecv, Ybackward, 1, TORUS_COMM, &recvRequests[3]);
+			// /* Y side communications */
+			// MPI_Isend(&newData[0][Iy-1][0], 1, Yside, Yforward, 1, TORUS_COMM, &sendRequests[2]);
+			// MPI_Irecv(&data[1][0][1], 1, YsideRecv, Ybackward, 1, TORUS_COMM, &recvRequests[3]);
 
-			MPI_Isend(&newData[0][0][0], 1, Yside, Ybackward, 1, TORUS_COMM, &sendRequests[3]);
-			MPI_Irecv(&data[1][Iy+1][1], 1, YsideRecv, Yforward, 1, TORUS_COMM, &recvRequests[2]);
+			// MPI_Isend(&newData[0][0][0], 1, Yside, Ybackward, 1, TORUS_COMM, &sendRequests[3]);
+			// MPI_Irecv(&data[1][Iy+1][1], 1, YsideRecv, Yforward, 1, TORUS_COMM, &recvRequests[2]);
 
-			/* Z side communications */
-			MPI_Isend(&newData[0][0][Iz-1], 1, Zside, Zforward, 1, TORUS_COMM, &sendRequests[4]);
-			MPI_Irecv(&data[0][0][0], 1, ZbackwardRecv, Zbackward, 1, TORUS_COMM, &recvRequests[5]);
+			// /* Z side communications */
+			// MPI_Isend(&newData[0][0][Iz-1], 1, Zside, Zforward, 1, TORUS_COMM, &sendRequests[4]);
+			// MPI_Irecv(&data[0][0][0], 1, ZbackwardRecv, Zbackward, 1, TORUS_COMM, &recvRequests[5]);
 
-			MPI_Isend(&newData[0][0][0], 1, Zside, Zbackward, 1, TORUS_COMM, &sendRequests[5]);
-			MPI_Irecv(&data[0][0][0], 1, ZforwardRecv, Zforward, 1, TORUS_COMM, &recvRequests[4]);
+			// MPI_Isend(&newData[0][0][0], 1, Zside, Zbackward, 1, TORUS_COMM, &sendRequests[5]);
+			// MPI_Irecv(&data[0][0][0], 1, ZforwardRecv, Zforward, 1, TORUS_COMM, &recvRequests[4]);
 
 			/* XY edges communication */
-			
-			
+			if (rank==1) {
 
-			updateCenter(Ix,Iy,Iz, data, newData, rank);			
+			}
+			MPI_Isend(&data[1][1][1], 1, XYedge, XYprocs[0], 1, TORUS_COMM, &sendRequests[6]);
+			MPI_Isend(&data[1][Iy][1], 1, XYedge, XYprocs[1], 1, TORUS_COMM, &sendRequests[7]);
+			MPI_Isend(&data[Ix][1][1], 1, XYedge, XYprocs[2], 1, TORUS_COMM, &sendRequests[8]);
+			MPI_Isend(&data[Ix][Iy][1], 1, XYedge, XYprocs[3], 1, TORUS_COMM, &sendRequests[9]);
 
-			MPI_Wait(&sendRequests[0], MPI_STATUS_IGNORE);
-			MPI_Wait(&sendRequests[1], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[0], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[1], MPI_STATUS_IGNORE);
+			MPI_Irecv(&data[Ix+1][Iy+1][1], 1, XYedge, XYprocs[3], 1, TORUS_COMM, &recvRequests[6]);
+			MPI_Irecv(&data[Ix+1][0][1], 1, XYedge, XYprocs[2], 1, TORUS_COMM, &recvRequests[7]);
+			MPI_Irecv(&data[0][Iy+1][1], 1, XYedge, XYprocs[1], 1, TORUS_COMM, &recvRequests[8]);
+			MPI_Irecv(&data[0][0][1], 1, XYedge, XYprocs[0], 1, TORUS_COMM, &recvRequests[9]);
 
-			updateXside(Ix, Iy, Iz, data, newData, 0, rank);
-			updateXside(Ix, Iy, Iz, data, newData, Ix-1, rank);
+			MPI_Waitall(4, &sendRequests[6]);
 
-			MPI_Wait(&sendRequests[2], MPI_STATUS_IGNORE);
-			MPI_Wait(&sendRequests[3], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[2], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[3], MPI_STATUS_IGNORE);
+			MPI_Wait(&recvRequests[6], MPI_STATUS_IGNORE);
+			MPI_Wait(&recvRequests[7], MPI_STATUS_IGNORE);
+			MPI_Wait(&recvRequests[8], MPI_STATUS_IGNORE);
+			MPI_Wait(&recvRequests[9], MPI_STATUS_IGNORE);
 
-			updateYside(Ix, Iy, Iz, data, newData, 0, rank);
-			updateYside(Ix, Iy, Iz, data, newData, Iy-1, rank);
+			updateXYedge(Ix, Iy, Iz, data, newData, 0, 0, rank);
+			updateXYedge(Ix, Iy, Iz, data, newData, 0, Iy-1, rank);
+			updateXYedge(Ix, Iy, Iz, data, newData, Ix-1, 0, rank);
+			updateXYedge(Ix, Iy, Iz, data, newData, Ix-1, Iy-1, rank);
 
-			MPI_Wait(&sendRequests[4], MPI_STATUS_IGNORE);
-			MPI_Wait(&sendRequests[5], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[4], MPI_STATUS_IGNORE);
-			MPI_Wait(&recvRequests[5], MPI_STATUS_IGNORE);
+			// updateCenter(Ix,Iy,Iz, data, newData, rank);			
 
-			updateZside(Ix, Iy, Iz, data, newData, 0, rank);
-			updateZside(Ix, Iy, Iz, data, newData, Iz-1, rank);
+			// MPI_Wait(&sendRequests[0], MPI_STATUS_IGNORE);
+			// MPI_Wait(&sendRequests[1], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[0], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[1], MPI_STATUS_IGNORE);
+
+			// updateXside(Ix, Iy, Iz, data, newData, 0, rank);
+			// updateXside(Ix, Iy, Iz, data, newData, Ix-1, rank);
+
+			// MPI_Wait(&sendRequests[2], MPI_STATUS_IGNORE);
+			// MPI_Wait(&sendRequests[3], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[2], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[3], MPI_STATUS_IGNORE);
+
+			// updateYside(Ix, Iy, Iz, data, newData, 0, rank);
+			// updateYside(Ix, Iy, Iz, data, newData, Iy-1, rank);
+
+			// MPI_Wait(&sendRequests[4], MPI_STATUS_IGNORE);
+			// MPI_Wait(&sendRequests[5], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[4], MPI_STATUS_IGNORE);
+			// MPI_Wait(&recvRequests[5], MPI_STATUS_IGNORE);
+
+			// updateZside(Ix, Iy, Iz, data, newData, 0, rank);
+			// updateZside(Ix, Iy, Iz, data, newData, Iz-1, rank);
 
 			
 			if (rank == 0) {
@@ -471,6 +533,7 @@ int main(int argc, char *argv[]){
 
 			copyData(Ix,Iy,Iz, data, newData,
 					 i, totalProcessorResults );
+
 			if (rank == 5) {
 				// printf("newData\n");
 				// for (y=0;y<Iy;y++) {

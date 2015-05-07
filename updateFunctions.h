@@ -23,4 +23,16 @@ void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix][Iy][Iz], int Z, int rank);
 
+/* Calculate the new values of an edge normal to the XY plane */
+void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int X, int Y, int rank);
+
+/* Calculate the new values of an edge normal to the YZ plane */
+void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Y, int Z, int rank);
+
+/* Calculate the new values of an edge normal to the ZX plane */
+void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Z, int X, int rank);
+
 #endif

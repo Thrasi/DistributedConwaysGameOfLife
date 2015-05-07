@@ -102,12 +102,55 @@ void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 		for (x=1;x<xLim;x++) {
 			c = count(Ix, Iy, Iz, data, x, y, z);
 			old = data[x][y][z];
-			// if (rank == 1) {
-			// 	if (c > 0) {
-			// 		printf("",)
-			// 	}
-			// }
 			newData[x-1][y-1][Z] = transition(c, old);
 		}
+	}
+}
+
+/* Calculate the new values of an edge normal to the XY plane */
+void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int X, int Y, int rank) {
+	int x, y, z;
+	x = X+1;
+	y = Y+1;
+	unsigned char c, old;
+	int zLim = Iz+1;
+
+	for (z=1;z<zLim;z++) {
+		c = count(Ix, Iy, Iz, data, x, y, z);
+		old = data[x][y][z];
+		newData[X][Y][z-1] = transition(c, old);
+	}
+}
+
+/* Calculate the new values of an edge normal to the YZ plane */
+void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Y, int Z, int rank) {
+	int x, y, z;
+	z = Z+1;
+	y = Y+1;
+	unsigned char c, old;
+	int xLim = Ix+1;
+
+	for (x=1;x<xLim;x++) {
+		c = count(Ix, Iy, Iz, data, x, y, z);
+		old = data[x][y][z];
+		newData[x-1][Y][Z] = transition(c, old);
+	}
+}
+
+/* Calculate the new values of an edge normal to the ZX plane */
+void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+				 unsigned char newData[Ix][Iy][Iz], int Z, int X, int rank) {
+	int x, y, z;
+	x = X+1;
+	z = Z+1;
+	unsigned char c, old;
+	int yLim = Iy+1;
+
+	for (y=1;y<yLim;y++) {
+		c = count(Ix, Iy, Iz, data, x, y, z);
+		old = data[x][y][z];
+		newData[X][y-1][Z] = transition(c, old);
 	}
 }
