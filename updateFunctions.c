@@ -38,13 +38,13 @@ void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 
 	int x, y, z;
 	unsigned char c, old;
-	int xLim = Ix+1;
-	int yLim = Iy+1;
-	int zLim = Iz+1;
+	int xLim = Ix;
+	int yLim = Iy;
+	int zLim = Iz;
 
-	for (x=1;x<xLim;x++) {
-		for (y=1;y<yLim;y++) {
-			for (z=1;z<zLim;z++) {
+	for (x=2;x<xLim;x++) {
+		for (y=2;y<yLim;y++) {
+			for (z=2;z<zLim;z++) {
 				c = count(Ix, Iy, Iz, data, x, y, z);
 				old = data[x][y][z];
 				newData[x][y][z] = transition(c, old);
@@ -55,103 +55,85 @@ void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 
 /* calculate the new values of a side with index X */
 void updateXside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int X, int rank) {
-	int x, y, z;
-	x = X+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int x, int rank) {
+	int y, z;
 	unsigned char c, old;
-	int yLim = Iy+1;
-	int zLim = Iz+1;
 
-	for (y=1;y<yLim;y++) {
-		for (z=1;z<zLim;z++) {
+	for (y=2;y<Iy;y++) {
+		for (z=2;z<Iz;z++) {
 			c = count(Ix, Iy, Iz, data, x, y, z);
 			old = data[x][y][z];
-			newData[X][y][z] = transition(c, old);
+			newData[x][y][z] = transition(c, old);
 		}
 	}
 }
 
 /* calculate the new values of a side with index Y */
 void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int Y, int rank) {
-	int x, y, z;
-	y = Y+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int y, int rank) {
+	int x, z;
 	unsigned char c, old;
-	int xLim = Ix+1;
-	int zLim = Iz+1;
 
-	for (x=1;x<xLim;x++) {
-		for (z=1;z<zLim;z++) {
+	for (x=1;x<Ix;x++) {
+		for (z=1;z<Iz;z++) {
 			c = count(Ix, Iy, Iz, data, x, y, z);
 			old = data[x][y][z];
-			newData[x][Y][z] = transition(c, old);
+			newData[x][y][z] = transition(c, old);
 		}
 	}
 }
 
 /* calculate the new values of a side with index Z */
 void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int Z, int rank) {
-	int x, y, z;
-	z = Z+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int z, int rank) {
+	int x, y;
 	unsigned char c, old;
-	int yLim = Iy+1;
-	int xLim = Ix+1;
 
-	for (y=1;y<yLim;y++) {
-		for (x=1;x<xLim;x++) {
+	for (y=2;y<Iy;y++) {
+		for (x=2;x<Ix;x++) {
 			c = count(Ix, Iy, Iz, data, x, y, z);
 			old = data[x][y][z];
-			newData[x][y][Z] = transition(c, old);
+			newData[x][y][z] = transition(c, old);
 		}
 	}
 }
 
 /* Calculate the new values of an edge normal to the XY plane */
 void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int X, int Y, int rank) {
-	int x, y, z;
-	x = X+1;
-	y = Y+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int x, int y, int rank) {
+	int z;
 	unsigned char c, old;
-	int zLim = Iz+1;
 
-	for (z=1;z<zLim;z++) {
+	for (z=2;z<Iz;z++) {
 		c = count(Ix, Iy, Iz, data, x, y, z);
 		old = data[x][y][z];
-		newData[X][Y][z] = transition(c, old);
+		newData[x][y][z] = transition(c, old);
 	}
 }
 
 /* Calculate the new values of an edge normal to the YZ plane */
 void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int Y, int Z, int rank) {
-	int x, y, z;
-	z = Z+1;
-	y = Y+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int y, int z, int rank) {
+	int x;
 	unsigned char c, old;
-	int xLim = Ix+1;
 
-	for (x=1;x<xLim;x++) {
+	for (x=2;x<Ix;x++) {
 		c = count(Ix, Iy, Iz, data, x, y, z);
 		old = data[x][y][z];
-		newData[x][Y][Z] = transition(c, old);
+		newData[x][y][z] = transition(c, old);
 	}
 }
 
 /* Calculate the new values of an edge normal to the ZX plane */
 void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				 unsigned char newData[Ix+2][Iy+2][Iz+2], int Z, int X, int rank) {
-	int x, y, z;
-	x = X+1;
-	z = Z+1;
+				 unsigned char newData[Ix+2][Iy+2][Iz+2], int z, int x, int rank) {
+	int y;
 	unsigned char c, old;
-	int yLim = Iy+1;
 
-	for (y=1;y<yLim;y++) {
+	for (y=2;y<Iy;y++) {
 		c = count(Ix, Iy, Iz, data, x, y, z);
 		old = data[x][y][z];
-		newData[X][y][Z] = transition(c, old);
+		newData[x][y][z] = transition(c, old);
 	}
 }
 
