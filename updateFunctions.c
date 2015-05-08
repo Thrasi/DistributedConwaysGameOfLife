@@ -18,14 +18,26 @@ unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2]
 }
 
 /* Given an old cell value and a count of neighbours calculate the new one */
+// 55 54
 unsigned char transition(unsigned char c, unsigned char old) {
+	// if ( old == 1) {
+	// 	if ( c == 4 || c == 5) {
+	// 		return 1;
+	// 	} else {
+	// 		return 0;
+	// 	}
+	// } else if ( c == 5 ) {
+	//         return 1;
+	// } else {
+	//         return 0;
+	// }
 	if ( old == 1) {
 		if ( c == 4 || c == 5) {
 			return 1;
 		} else {
 			return 0;
 		}
-	} else if ( c == 4 ) {
+	} else if ( c == 5 ) {
 	        return 1;
 	} else {
 	        return 0;

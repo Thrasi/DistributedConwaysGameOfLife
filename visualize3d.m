@@ -29,5 +29,5 @@ for j = 1:it
     end
     grid on
     axis([0 w 0 h 0 d]);
-    pause(0.5);
+    pause(0.2);
 end
