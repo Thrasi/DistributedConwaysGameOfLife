@@ -17,13 +17,17 @@ end
 
 for j = 1:it
     clf;
+    title(sprintf('Iteration %d',j));
+    xlabel('X');
+    ylabel('Y');
+    zlabel('Z');
     for k = 1:R
         m = data{k,j};
         for i = 1:size(m, 2)
-            voxel(m(:,i), [1,1,1], 'r', 0.7);
+            voxel(m(:,i), [1,1,1], 'r', 0.5);
         end
     end
     grid on
     axis([0 w 0 h 0 d]);
-    pause(0.3);
+    pause(0.5);
 end
