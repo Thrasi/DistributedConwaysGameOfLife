@@ -7,7 +7,7 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define iterations 1 /* number of iterations */
+#define iterations 60 /* number of iterations */
 
 /* Number of processors in each dimension */
 #define Px 2
@@ -37,8 +37,7 @@ void check(int rc) {
 }
 
 void copyData(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				   unsigned char newData[Ix+2][Iy+2][Iz+2], 
-				  int t, unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1]) {
+				   unsigned char newData[Ix+2][Iy+2][Iz+2]) {
 	int x, y, z;
 	for (x=0;x<Ix+2;x++) {
 		for (y=0;y<Iy+2;y++) {
@@ -49,14 +48,13 @@ void copyData(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 	}
 }
 
-void saveData(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
-				   unsigned char newData[Ix+2][Iy+2][Iz+2], 
+void saveData(int Ix, int Iy, int Iz, unsigned char newData[Ix+2][Iy+2][Iz+2], 
 				  int t, unsigned char totalProcessorResults[Ix][Iy][Iz][iterations+1]) {
 	int x, y, z;
 	for (x=0;x<Ix;x++) {
 		for (y=0;y<Iy;y++) {
 			for (z=0;z<Iz;z++) {
-				totalProcessorResults[x][y][z][t] = newData[x][y][z];
+				totalProcessorResults[x][y][z][t] = newData[x+1][y+1][z+1];
 			}
 		}
 	}
@@ -139,15 +137,17 @@ int main(int argc, char *argv[]){
 
 	/* inital data */
 	srandom(rank+1);
-	
-	// for (y=0;y<Iy;y++) {
-	// 	for (x=0;x<Ix;x++) {
-	// 		for (z=0;z<Iz;z++) {
-	// 			data[x][y][z] = random() % 2;
-	// 		}
-	// 	}
-	// }
+	if (rank==0) {
+		for (y=1;y<Iy+1;y++) {
+			for (x=1;x<Ix+1;x++) {
+				for (z=1;z<Iz+1;z++) {
+					newData[x][y][z] = random() % 2;
+					//newData[x][y][1] = 1;
 
+				}
+			}
+		}
+	}
 
 	// if (rank == 0) {
 	// 	unsigned char uop = 0;
@@ -176,12 +176,12 @@ int main(int argc, char *argv[]){
 			
 	// 	}
 	// }
-
+	//if (rank == 1)
 		//side oscillating
-	// newData[2][2][0] = 1;
-	// newData[3][3][0] = 1;
-	// newData[2][3][4] = 1;
-	// newData[3][2][4] = 1;
+	// newData[1][1][1] = 1;
+	// newData[5][5][1] = 1;
+	// newData[1][5][5] = 1;
+	// newData[5][1][5] = 1;
 
 	// newData[2][0][2] = 1;
 	// newData[3][4][2] = 1;
@@ -229,10 +229,8 @@ int main(int argc, char *argv[]){
 	
 
 
-	copyData(Ix,Iy,Iz, data, newData,
-					 0, totalProcessorResults );
-	saveData(Ix,Iy,Iz, data, newData,
-					 0, totalProcessorResults );
+	copyData(Ix,Iy,Iz, data, newData );
+	saveData(Ix,Iy,Iz, newData, 0, totalProcessorResults );
 
 
 	/* Side ranks */
@@ -322,7 +320,7 @@ int main(int argc, char *argv[]){
 	check ( MPI_Type_vector(Iy, 1, (Iz+2), MPI_UNSIGNED_CHAR, &ZXedge) );
 	check ( MPI_Type_commit(&ZXedge) );
 
-	if (rank == 0) {
+	if (rank == 1) {
 		// for (x=0;x<Ix;x++) {
 		// 	for (y=0;y<Iy;y++) {
 		// 		for (z=0;z<Iz;z++) {
@@ -344,9 +342,9 @@ int main(int argc, char *argv[]){
 		// 			printf("\n");
 		// 		}
 
-		// 		for (x=0;x<Ix+2;x++) {
 		// for (z=0;z<Iz+2;z++) {
 		// 	for (y=0;y<Iy+2;y++) {
+		// 		for (x=0;x<Ix+2;x++) {
 				
 		// 			// printf("%d, ",XbackwardGhosts[y][z]);
 		// 			printf("%d, ",newData[x][y][z]);
@@ -423,7 +421,7 @@ int main(int argc, char *argv[]){
 			check ( MPI_Isend(&data[Ix][1][1], 1, ZXedge, ZXprocs[2], 1, TORUS_COMM, &sendRequests[16]) );
 			check ( MPI_Isend(&data[Ix][1][Iz], 1, ZXedge, ZXprocs[3], 1, TORUS_COMM, &sendRequests[17]) );
 
-			chech ( MPI_Irecv(&data[Ix+1][1][Iz+1], 1, ZXedge, ZXprocs[3], 1, TORUS_COMM, &recvRequests[14]) );
+			check ( MPI_Irecv(&data[Ix+1][1][Iz+1], 1, ZXedge, ZXprocs[3], 1, TORUS_COMM, &recvRequests[14]) );
 			check ( MPI_Irecv(&data[Ix+1][1][0], 1, ZXedge, ZXprocs[2], 1, TORUS_COMM, &recvRequests[15]) );
 			check ( MPI_Irecv(&data[0][1][Iz+1], 1, ZXedge, ZXprocs[1], 1, TORUS_COMM, &recvRequests[16]) );
 			check ( MPI_Irecv(&data[0][1][0], 1, ZXedge, ZXprocs[0], 1, TORUS_COMM, &recvRequests[17]) );
@@ -449,30 +447,33 @@ int main(int argc, char *argv[]){
 
 			/* Start updating the center */
 			updateCenter(Ix,Iy,Iz, data, newData, rank);
+			
 
 			/* Wait until a forward Xside has been received and update it */
-			check ( MPI_Wait(&recvRequests[0], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[0], MPI_STATUS_IGNORE) );
 			updateXside(Ix, Iy, Iz, data, newData, Ix, rank);
 
 			/* Wait until a backward Xside has been received and update it */
-			check ( MPI_Wait(&recvRequests[1], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[1], MPI_STATUS_IGNORE) );
 			updateXside(Ix, Iy, Iz, data, newData, 1, rank);
 
 			/* Wait until a forward Yside has been received and update it */
-			check ( MPI_Wait(&recvRequests[2], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[2], MPI_STATUS_IGNORE) );
 			updateYside(Ix, Iy, Iz, data, newData, Iy, rank);
 
 			/* Wait until a backward Yside has been received and update it */
-			check ( MPI_Wait(&recvRequests[3], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[3], MPI_STATUS_IGNORE) );
 			updateYside(Ix, Iy, Iz, data, newData, 1, rank);
 
 			/* Wait until a forward Zside has been received and update it */
-			check ( MPI_Wait(&recvRequests[4], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[4], MPI_STATUS_IGNORE) );
 			updateZside(Ix, Iy, Iz, data, newData, Iy, rank);
 
 			/* Wait until a backward Zside has been received and update it */
-			check ( MPI_Wait(&recvRequests[5], MPI_STATUS_IGNORE);
+			check ( MPI_Wait(&recvRequests[5], MPI_STATUS_IGNORE) );
 			updateZside(Ix, Iy, Iz, data, newData, 1, rank);
+
+
 
 			/* Wait and Update the XY edges */
 
@@ -527,57 +528,77 @@ int main(int argc, char *argv[]){
 			check ( MPI_Wait(&recvRequests[24], MPI_STATUS_IGNORE) );
 			check ( MPI_Wait(&recvRequests[25], MPI_STATUS_IGNORE) );
 
-			updateCorners(Ix, Iy, Iz, data, newData, rank)
+
+			updateCorners(Ix, Iy, Iz, data, newData, rank);
 
 			check ( MPI_Waitall(26, sendRequests,  MPI_STATUSES_IGNORE) );
 
 			
-			// if (rank == 1) {
-			// 	printf("receiver\n");
-			// 	// for (x=0;x<Ix+2;x++) {
-			// 	// 	for (y=0;y<Iy+2;y++) {
-			// 	// 		for (z=0;z<Iz+2;z++) {
-			// 	// 			// printf("%d, ",XbackwardGhosts[y][z]);
-			// 	// 			printf("%d, ",data[x][y][z]);
-			// 	// 		}
-			// 	// 		printf("\n");
-			// 	// 	}
-			// 	// 	printf("\n");
-			// 	// }
-			// 	// for (y=0;y<Iy+2;y++) {
-			// 	// 	for (x=0;x<Ix+2;x++) {
-			// 	// 		for (z=0;z<Iz+2;z++) {
-			// 	// 			// printf("%d, ",XbackwardGhosts[y][z]);
-			// 	// 			printf("%d, ",data[x][y][z]);
-			// 	// 		}
-			// 	// 		printf("\n");
-			// 	// 	}
-			// 	// 	printf("\n");
-			// 	// }
-			// 	for (z=0;z<Iz+2;z++) {
-			// 		for (y=0;y<Iy+2;y++) {
-			// 			for (x=0;x<Ix+2;x++) {
+			if (rank == 1) {
+				// printf("receiver\n");
+				// for (x=0;x<Ix+2;x++) {
+				// 	for (y=0;y<Iy+2;y++) {
+				// 		for (z=0;z<Iz+2;z++) {
+				// 			// printf("%d, ",XbackwardGhosts[y][z]);
+				// 			printf("%d, ",data[x][y][z]);
+				// 		}
+				// 		printf("\n");
+				// 	}
+				// 	printf("\n");
+				// }
+				// for (y=0;y<Iy+2;y++) {
+				// 	for (x=0;x<Ix+2;x++) {
+				// 		for (z=0;z<Iz+2;z++) {
+				// 			// printf("%d, ",XbackwardGhosts[y][z]);
+				// 			printf("%d, ",data[x][y][z]);
+				// 		}
+				// 		printf("\n");
+				// 	}
+				// 	printf("\n");
+				// }
+				// printf("DATA\n");
+				// for (z=0;z<Iz+2;z++) {
+				// 	for (y=0;y<Iy+2;y++) {
+				// 		for (x=0;x<Ix+2;x++) {
 						
-			// 				// printf("%d, ",XbackwardGhosts[y][z]);
-			// 				printf("%d, ",data[x][y][z]);
-			// 			}
-			// 			printf("\n");
-			// 		}
-			// 		printf("\n");
-			// 	}
+				// 			// printf("%d, ",XbackwardGhosts[y][z]);
+				// 			printf("%d, ",data[x][y][z]);
+				// 		}
+				// 		printf("\n");
+				// 	}
+				// 	printf("\n");
+				// }
+				// printf("NEWDATA\n");
+				// for (z=0;z<Iz+2;z++) {
+				// 	for (y=0;y<Iy+2;y++) {
+				// 		for (x=0;x<Ix+2;x++) {
+						
+				// 			// printf("%d, ",XbackwardGhosts[y][z]);
+				// 			printf("%d, ",newData[x][y][z]);
+				// 		}
+				// 		printf("\n");
+				// 	}
+				// 	printf("\n");
+				// }
+			}
+
+
+
+			copyData(Ix,Iy,Iz, data, newData );
+			// unsigned char *tmp[Ix][Iy][Iz] = &data[0][0][0];
+			// if (rank==5) {
+			// 	printf("%d",data[0][0][0]);
+			// 	printf("%d",tmp[0][0][0]);
+			// 	printf("%d",data[5][0][0]);
+			// 	printf("%d",tmp[5][0][0]);
+			// 	printf("%d",data[3][0][3]);
+			// 	printf("%d",tmp[3][0][3]);
 			// }
+			//data = newData;
+			//newData = tmp;
+			saveData(Ix,Iy,Iz, newData, i, totalProcessorResults );
 
-
-
-			// copyData(Ix,Iy,Iz, data, newData,
-			// 		 i, totalProcessorResults );
-			unsigned char * tmp = data;
-			data = newData;
-			newData = tmp;
-			saveData(Ix,Iy,Iz, data, newData,
-					 i, totalProcessorResults );
-
-			// if (rank == 0) {
+			// if (rank == 1) {
 			// 	printf("receiver\n");
 			// 	// for (x=0;x<Ix+2;x++) {
 			// 	// 	for (y=0;y<Iy+2;y++) {

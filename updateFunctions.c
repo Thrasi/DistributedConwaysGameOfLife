@@ -20,7 +20,7 @@ unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2]
 /* Given an old cell value and a count of neighbours calculate the new one */
 unsigned char transition(unsigned char c, unsigned char old) {
 	if ( old == 1) {
-		if ( c == 4 || c == 5 ) {
+		if ( c == 4 || c == 5) {
 			return 1;
 		} else {
 			return 0;
