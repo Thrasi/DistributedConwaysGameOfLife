@@ -21,7 +21,7 @@ struct triple optimize(int w, int h, int d, int R) {
 			r = rest / q;
 
 			double dp = (double) p, dq = (double) q, dr = (double) r;
-			double nphi = dp / w + dq / h + dr / d + 2 * (dp*dq/(w*h) + dp*dr/(w*d) + dq*dr/(h*d);
+			double nphi = dp / w + dq / h + dr / d + 2 * (dp*dq/(w*h) + dp*dr/(w*d) + dq*dr/(h*d));
 			if (nphi < phi) {
 				phi = nphi;
 				bp = p;
