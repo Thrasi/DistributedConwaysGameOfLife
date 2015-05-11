@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
 	for (it = 0; it < MAXITER; it++) {
 		//fprintf(stderr, "%d\n", it);
-		printf("%d\n", it);
+		printf("%d %f\n", it, (clock() - start)/(CLOCKS_PER_SEC*1.0));
 		for (z = 0; z < d; z++) {
 			for (y = 0; y < h; y++) {
 				for (x = 0; x < w; x++) {
