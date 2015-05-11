@@ -3,7 +3,6 @@
 #include <time.h>
 
 #define NC 78		// Neighbor coordinates
-#define MAXITER 30
 
 void generateRandom(int w, int h, int d, double p, unsigned char *A) {
 	int x, y, z;
@@ -76,12 +75,13 @@ int countAlive(int x, int y, int z, int w, int h, int d, unsigned char *A, int *
 	return count;
 }
 
-int main() {
+int main(int argc, char **argv) {
 	int x, y, z, i, j, it;
 	int w, h, d;
+	int MAXITER;
 	
 	//scanf("%d %d %d", &w, &h, &d);
-	w = 500; h = 500; d = 500;
+	w = atoi(argv[1]); h = atoi(argv[2]); d = atoi(argv[3]), MAXITER = atoi(argv[4]);
 	unsigned char *A = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
 	unsigned char *B = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
 	int *coords = (int*) malloc(NC*sizeof(int));
