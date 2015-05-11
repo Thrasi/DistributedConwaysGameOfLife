@@ -66,13 +66,23 @@ void neighbours(int x, int y, int z, int w, int h, int d, int* coords) {
 	}
 }
 
-int countAlive(int x, int y, int z, int w, int h, int d, unsigned char *A, int *coords) {
+inline int countAlive(int x, int y, int z, int w, int h, int d, unsigned char *A, int *coords) {
 	int count = 0, i;
-	neighbours(x, y, z, w, h, d, coords);
-	for (i = 0; i < NC; i += 3) {
-		count += A[coords[i+2]*w*h + coords[i+1]*w + coords[i]];
+	//neighbours(x, y, z, w, h, d, coords);
+	int zoff = w*h;
+	//for (i = 0; i < NC; i += 3) {
+	//	count += A[coords[i+2]*xoff + coords[i+1]*w + coords[i]];
+	//}
+	int dx, dy, dz;
+	for (dx = -1; dx <= 1; dx++) {
+		for (dy = -1; dy <= 1; dy++) {
+			for (dz = -1; dz <= 1; dz++) {
+				int nx = x+dx, ny = y+dy, nz = z+dz;
+				count += A[nz*zoff + ny*w + nx];
+			}
+		}
 	}
-	return count;
+	return count - A[z*zoff + y*w + x];
 }
 
 int main(int argc, char **argv) {
@@ -82,8 +92,8 @@ int main(int argc, char **argv) {
 	
 	//scanf("%d %d %d", &w, &h, &d);
 	w = atoi(argv[1]); h = atoi(argv[2]); d = atoi(argv[3]), MAXITER = atoi(argv[4]);
-	unsigned char *A = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
-	unsigned char *B = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
+	unsigned char *A = (unsigned char*) malloc((w+2)*(h+2)*(d+2)*sizeof(unsigned char));
+	unsigned char *B = (unsigned char*) malloc((w+2)*(h+2)*(d+2)*sizeof(unsigned char));
 	int *coords = (int*) malloc(NC*sizeof(int));
 
 	srand(time(NULL));
@@ -109,9 +119,9 @@ int main(int argc, char **argv) {
 	for (it = 0; it < MAXITER; it++) {
 		//fprintf(stderr, "%d\n", it);
 		printf("%d %f\n", it, (clock() - start)/(CLOCKS_PER_SEC*1.0));
-		for (z = 0; z < d; z++) {
-			for (y = 0; y < h; y++) {
-				for (x = 0; x < w; x++) {
+		for (z = 1; z <= d; z++) {
+			for (y = 1; y <= h; y++) {
+				for (x = 1; x <= w; x++) {
 		
 					int count = countAlive(x, y, z, w, h, d, A, coords);
 					int idx = z*w*h + y*w + x;
