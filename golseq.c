@@ -80,17 +80,17 @@ int main() {
 	int x, y, z, i, j, it;
 	int w, h, d;
 	
-	scanf("%d %d %d", &w, &h, &d);
-	//w = 100; h = 100; d = 100;
+	//scanf("%d %d %d", &w, &h, &d);
+	w = 500; h = 500; d = 500;
 	unsigned char *A = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
 	unsigned char *B = (unsigned char*) malloc(w*h*d*sizeof(unsigned char));
 	int *coords = (int*) malloc(NC*sizeof(int));
 
 	srand(time(NULL));
-	//generateRandom(w, h, d, 0.3, A);
+	generateRandom(w, h, d, 0.3, A);
 
 	// Read shit
-	
+	/*
 	for (z = 0; z < d; z++) {
 		for (y = 0; y < h; y++) {
 			for (x = 0; x < w; x++) {
@@ -98,14 +98,17 @@ int main() {
 			}
 		}
 	}
+	*/
 	
 
 	printf("%d %d %d %d\n", MAXITER+1, w, h, d);
-	printMap(A, w, h, d);
+	//printMap(A, w, h, d);
+
+	clock_t start = clock();
 
 	for (it = 0; it < MAXITER; it++) {
 		//fprintf(stderr, "%d\n", it);
-		
+		printf("%d\n", it);
 		for (z = 0; z < d; z++) {
 			for (y = 0; y < h; y++) {
 				for (x = 0; x < w; x++) {
@@ -130,11 +133,13 @@ int main() {
 			}
 		}
 
-		printMap(B, w, h, d);
+		//printMap(B, w, h, d);
 		unsigned char *tmp = A;
 		A = B;
 		B = tmp;
 	}
+
+	printf("%f\n", (clock() - start) / (CLOCKS_PER_SEC * 1.0));
 
 	
 
