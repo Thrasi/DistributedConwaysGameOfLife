@@ -3,7 +3,7 @@
 
 
 /* Count the number of active cells around position (x,y,z) */
-unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2], int x, int y, int z) {
+inline unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2], int x, int y, int z) {
 	unsigned char c = 0;
     int dx,dy,dz;
     for (dx=-1;dx<=1;dx++) {
@@ -19,7 +19,7 @@ unsigned char count(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2]
 
 /* Given an old cell value and a count of neighbours calculate the new one */
 // 55 54
-unsigned char transition(unsigned char c, unsigned char old) {
+inline unsigned char transition(unsigned char c, unsigned char old) {
 	// if ( old == 1) {
 	// 	if ( c == 4 || c == 5) {
 	// 		return 1;
@@ -45,7 +45,7 @@ unsigned char transition(unsigned char c, unsigned char old) {
 }
 
 /* calculate the new values of the center cells*/
-void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				   unsigned char newData[Ix+2][Iy+2][Iz+2], int rank) {
 
 	int x, y, z;
@@ -66,7 +66,7 @@ void updateCenter(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* calculate the new values of a side with index X */
-void updateXside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateXside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int x, int rank) {
 	int y, z;
 	unsigned char c, old;
@@ -81,7 +81,7 @@ void updateXside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* calculate the new values of a side with index Y */
-void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int y, int rank) {
 	int x, z;
 	unsigned char c, old;
@@ -96,7 +96,7 @@ void updateYside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* calculate the new values of a side with index Z */
-void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int z, int rank) {
 	int x, y;
 	unsigned char c, old;
@@ -111,7 +111,7 @@ void updateZside(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* Calculate the new values of an edge normal to the XY plane */
-void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int x, int y, int rank) {
 	int z;
 	unsigned char c, old;
@@ -124,7 +124,7 @@ void updateXYedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* Calculate the new values of an edge normal to the YZ plane */
-void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int y, int z, int rank) {
 	int x;
 	unsigned char c, old;
@@ -137,7 +137,7 @@ void updateYZedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* Calculate the new values of an edge normal to the ZX plane */
-void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int z, int x, int rank) {
 	int y;
 	unsigned char c, old;
@@ -151,7 +151,7 @@ void updateZXedge(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 
 
 /* A helper function to make update corners less cluttered */
-void updateIndex(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateIndex(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int x, int y, int z) {
 
 	unsigned char c, old;
@@ -161,7 +161,7 @@ void updateIndex(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 }
 
 /* Calculate the new values of a corner */
-void updateCorners(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
+inline void updateCorners(int Ix, int Iy, int Iz, unsigned char data[Ix+2][Iy+2][Iz+2],
 				 unsigned char newData[Ix+2][Iy+2][Iz+2], int rank) {
 
 	

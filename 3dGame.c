@@ -21,9 +21,9 @@
 #define zBC 1
 
 /* Size of each dimension */
-#define xN 10
-#define yN 10
-#define zN 10
+#define xN 100
+#define yN 100
+#define zN 100
 
 /**/
 #define X 0
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
 	MPI_Request recvRequests[26];
 
     /* initialize MPI and create virtual 3d torus topology*/
-
+    double start = MPI_Wtime();
     check ( MPI_Init(&argc, &argv) );
     check ( MPI_Comm_rank(MPI_COMM_WORLD, &rank) );
     check ( MPI_Comm_size(MPI_COMM_WORLD, &size) );
@@ -152,15 +152,15 @@ int main(int argc, char *argv[]){
 	/* inital data */
 	srandom(rank+1);
 	if (rank==0) {
-		// for (y=1;y<Iy+1;y++) {
-		// 	for (x=1;x<Ix+1;x++) {
-		// 		for (z=1;z<Iz+1;z++) {
-		// 			newData[x][y][z] = random() % 2;
-		// 			//newData[x][y][1] = 1;
+		for (y=1;y<Iy+1;y++) {
+			for (x=1;x<Ix+1;x++) {
+				for (z=1;z<Iz+1;z++) {
+					newData[x][y][z] = random() % 2;
+					//newData[x][y][1] = 1;
 
-		// 		}
-		// 	}
-		// }
+				}
+			}
+		}
 
 		
 		
@@ -446,9 +446,9 @@ int main(int argc, char *argv[]){
 			/* X side communications */
 			check ( MPI_Isend(&data[Ix][1][1], 1, Xside, Xforward, 0, TORUS_COMM, &sendRequests[0]) );
 			check ( MPI_Irecv(&data[0][1][1], 1, Xside, Xbackward, 0, TORUS_COMM, &recvRequests[1]) );
-			if (i==1) {
-				printf("rank %d, Xforward: %d, Xbackward: %d\n",rank,Xforward, Xbackward);
-			}
+			// if (i==1) {
+			// 	printf("rank %d, Xforward: %d, Xbackward: %d\n",rank,Xforward, Xbackward);
+			// }
 			check ( MPI_Isend(&data[1][1][1], 1, Xside, Xbackward, 1, TORUS_COMM, &sendRequests[1]) );
 			check ( MPI_Irecv(&data[Ix+1][1][1], 1, Xside, Xforward, 1, TORUS_COMM, &recvRequests[0]) );
 
@@ -761,6 +761,10 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	double end = MPI_Wtime();
+
+	printf("P: %d\n(Px, Py, Pz): (%d, %d, %d)\nDatasize (x,y,z): (%d,%d,%d) => %d\nRunTime: %e\n", size, Px, Py, Pz, xN, yN, zN, xN*yN*zN, end-start);
+
 
 	FILE *fp;
 	if (rank==0) {
@@ -804,10 +808,7 @@ int main(int argc, char *argv[]){
 
 	fclose(fp);
 	
-	free(totalProcessorResults);
-	free(data);
-	free(newData);
-
+	
 	MPI_Finalize();
 	exit(0);
 }
