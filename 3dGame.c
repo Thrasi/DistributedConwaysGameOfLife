@@ -804,7 +804,10 @@ int main(int argc, char *argv[]){
 
 	fclose(fp);
 	
-	
+	free(totalProcessorResults);
+	free(data);
+	free(newData);
+
 	MPI_Finalize();
 	exit(0);
 }
