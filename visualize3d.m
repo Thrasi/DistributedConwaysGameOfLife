@@ -14,9 +14,10 @@ for i = 1:R
     end
     fclose(file);
 end
-
+kit = 18:23
 for j = 1:it
     clf;
+    %subplot(3,2,j);
     title(sprintf('Iteration %d',j));
     xlabel('X');
     ylabel('Y');
@@ -24,9 +25,17 @@ for j = 1:it
     for k = 1:R
         m = data{k,j};
         for i = 1:size(m, 2)
-            voxel(m(:,i), [1,1,1], 'r', 0.5);
+            voxel(m(:,i), [1,1,1], 'r', 0.7);
         end
     end
+    voxel([0 0 0], [5,5,5], 'g', 0.1);
+    voxel([0 0 5], [5,5,5], 'b', 0.1);
+    voxel([0 5 0], [5,5,5], 'y', 0.1);
+    voxel([0 5 5], [5,5,5], 'c', 0.1);
+    voxel([5 0 0], [5,5,5], 'y', 0.1);
+    voxel([5 0 5], [5,5,5], 'c', 0.1);
+    voxel([5 5 0], [5,5,5], 'g', 0.1);
+    voxel([5 5 5], [5,5,5], 'b', 0.1);
     grid on
     axis([0 w 0 h 0 d]);
     pause(0.2);
