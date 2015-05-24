@@ -13,7 +13,7 @@
 #define yBC 1
 #define zBC 1
 
-#define writeToFile 1
+#define writeToFile 0
 
 /**/
 #define X 0
@@ -98,17 +98,17 @@ printf("FUCK");
     check ( MPI_Init(&argc, &argv) );
     check ( MPI_Comm_rank(MPI_COMM_WORLD, &rank) );
     check ( MPI_Comm_size(MPI_COMM_WORLD, &size) );
-printf("rank %d", rank);
+
     Nx = atoi(argv[1]);
     Ny = atoi(argv[2]);
     Nz = atoi(argv[3]);
-printf("rank %d", rank);
+
     struct triple opt = optimize(Nx, Ny, Nz, size);
    
    	int Px = opt.p, Py = opt.q, Pz = opt.r;
-   	printf("rank %d", rank);
+   	
    //	printf("%d %d %d\n",Px, Py, Pz);
-   	printf("rank %d", rank);
+   	
     // if (rank==0)
     // {
     // printf("rank: %d, size: %d, == %d\n",rank, size, Px*Py*Pz);
@@ -116,17 +116,12 @@ printf("rank %d", rank);
     // }
 
     dim[0] = Px; dim[1] = Py; dim[2] = Pz;
-    printf("rank %d", rank);
+    
 	period[0] = xBC; period[1] = yBC; period[2] = zBC;
-	printf("rank %d", rank);
 	reorder = 0;
-	printf("rank %d", rank);
 	check ( MPI_Cart_create(MPI_COMM_WORLD, 3, dim, period, reorder, &TORUS_COMM) );
-	printf("rank %d", rank);
 	check ( MPI_Cart_coords(TORUS_COMM, rank, 3, coord) );
-	printf("rank %d", rank);
 	int iterations = atoi(argv[4]);
-	printf("rank %d", rank);
 	/* 3d linear data distribution */
 	
 	Lx = Nx / Px;
@@ -142,16 +137,18 @@ printf("rank %d", rank);
 	Iz = ( Nz + Pz - coord[2]-1 ) / Pz;
 
 	/* Data arrays */
-	unsigned char *totalProcessorResults = (unsigned char*) malloc(Ix*Iy*Iz*(iterations+1)*sizeof(unsigned char));
+	unsigned char *totalProcessorResults;
+	if (writeToFile == 1){
+		totalProcessorResults = (unsigned char*) malloc(Ix*Iy*Iz*(iterations+1)*sizeof(unsigned char));	
+	} 
 	unsigned char *data = (unsigned char*) calloc((Ix+2)*(Iy+2)*(Iz+2), sizeof(unsigned char));
-	//memset(data, 0, sizeof data);
+
 	unsigned char *newData = (unsigned char*) calloc((Ix+2)*(Iy+2)*(Iz+2), sizeof(unsigned char));
-	//memset(newData, 0, sizeof newData);
+
 
 	int xoff = (Iz+2)*(Iy+2);
 	int yoff = (Iz+2);
-	//MPI_Finalize();
-	//exit(0);
+	
 	/* inital data */
 	srandom(rank+1);
 	if (rank==0) {
@@ -402,59 +399,15 @@ printf("rank %d", rank);
 	check ( MPI_Type_vector(Iy, 1, (Iz+2), MPI_UNSIGNED_CHAR, &ZXedge) );
 	check ( MPI_Type_commit(&ZXedge) );
 
-	if (rank == 0) {
-		// for (x=0;x<Ix;x++) {
-		// 	for (y=0;y<Iy;y++) {
-		// 		for (z=0;z<Iz;z++) {
-		// 			//printf("%d, ",XbackwardGhosts[y][z]);
-		// 			printf("%d, ",newData[x][y][z]);
-		// 		}
-		// 		printf("\n");
-		// 	}
-		// 	printf("\n");
-		// }
-		// for (y=0;y<Iy;y++) {
-		// 			for (x=0;x<Ix;x++) {
-		// 				for (z=0;z<Iz;z++) {
-		// 					// printf("%d, ",XbackwardGhosts[y][z]);
-		// 					printf("%d, ",newData[x][y][z]);
-		// 				}
-		// 				printf("\n");
-		// 			}
-		// 			printf("\n");
-		// 		}
 
-		// for (z=0;z<Iz+2;z++) {
-		// 	for (y=0;y<Iy+2;y++) {
-		// 		for (x=0;x<Ix+2;x++) {
-				
-		// 			// printf("%d, ",XbackwardGhosts[y][z]);
-		// 			printf("%d, ",newData[x][y][z]);
-		// 		}
-		// 		printf("\n");
-		// 	}
-		// 	printf("\n");
-		// }
-
-		// 		for (x=0;x<Ix+2;x++) {
-		// for (z=0;z<Iz+2;z++) {
-		// 	for (y=0;y<Iy+2;y++) {
-				
-		// 			// printf("%d, ",XbackwardGhosts[y][z]);
-		// 			printf("%d, ",data[x][y][z]);
-		// 		}
-		// 		printf("\n");
-		// 	}
-		// 	printf("\n");
-		// }
-	}
-	// if (rank == 0) {
-	// 	printf("rank: %d, Before iter: %d\n",rank, totalProcessorResults[0][0][0][0]);	
-	// }
-	
+	// printf("Iterations %d\n", iterations);
 	for (i=1;i<=iterations;i++) {
 		if (doMPI==1) {
-			
+			double tmpEnd = MPI_Wtime();
+
+			// if (rank==0) {
+			// 	printf("Here time %e\n", tmpEnd-start);
+			// }
 			
 			/* X side communications */
 			check ( MPI_Isend(data + xoff*Ix + yoff*1 + 1, 1, Xside, Xforward, 0, TORUS_COMM, &sendRequests[0]) );
@@ -635,104 +588,12 @@ printf("rank %d", rank);
 			
 			check ( MPI_Waitall(26, sendRequests,  MPI_STATUSES_IGNORE) );
 
-			
-			if (rank == 0) {
-				// printf("receiver\n");
-				// for (x=0;x<Ix+2;x++) {
-				// 	for (y=0;y<Iy+2;y++) {
-				// 		for (z=0;z<Iz+2;z++) {
-				// 			// printf("%d, ",XbackwardGhosts[y][z]);
-				// 			printf("%d, ",data[x][y][z]);
-				// 		}
-				// 		printf("\n");
-				// 	}
-				// 	printf("\n");
-				// }
-				// for (y=0;y<Iy+2;y++) {
-				// 	for (x=0;x<Ix+2;x++) {
-				// 		for (z=0;z<Iz+2;z++) {
-				// 			// printf("%d, ",XbackwardGhosts[y][z]);
-				// 			printf("%d, ",data[x][y][z]);
-				// 		}
-				// 		printf("\n");
-				// 	}
-				// 	printf("\n");
-				// }
-				// printf("DATA\n");
-				// 		for (x=0;x<Ix+2;x++) {
-				// for (z=0;z<Iz+2;z++) {
-				// 	for (y=0;y<Iy+2;y++) {
-						
-				// 			// printf("%d, ",XbackwardGhosts[y][z]);
-				// 			printf("%d, ",data[x][y][z]);
-				// 		}
-				// 		printf("\n");
-				// 	}
-				// 	printf("\n");
-				// }
-				// printf("NEWDATA\n");
-				// for (z=0;z<Iz+2;z++) {
-				// 	for (y=0;y<Iy+2;y++) {
-				// 		for (x=0;x<Ix+2;x++) {
-						
-				// 			// printf("%d, ",XbackwardGhosts[y][z]);
-				// 			printf("%d, ",newData[x][y][z]);
-				// 		}
-				// 		printf("\n");
-				// 	}
-				// 	printf("\n");
-				// }
-			}
-
-
-
-			copyData(Ix,Iy,Iz, data, newData );
-			
-			// unsigned char *tmp = data;
-			// data = newData;
-			// newData = tmp;
 			if (writeToFile == 1 ) {
 				saveData(Ix,Iy,Iz, newData, i, iterations, totalProcessorResults );
 			}
-			// unsigned char *tmp = data;
-			// data = newData;
-			// newData = tmp;
-			// 
-
-			// if (rank == 1) {
-			// 	printf("receiver\n");
-			// 	// for (x=0;x<Ix+2;x++) {
-			// 	// 	for (y=0;y<Iy+2;y++) {
-			// 	// 		for (z=0;z<Iz+2;z++) {
-			// 	// 			// printf("%d, ",XbackwardGhosts[y][z]);
-			// 	// 			printf("%d, ",data[x][y][z]);
-			// 	// 		}
-			// 	// 		printf("\n");
-			// 	// 	}
-			// 	// 	printf("\n");
-			// 	// }
-			// 	// for (y=0;y<Iy+2;y++) {
-			// 	// 	for (x=0;x<Ix+2;x++) {
-			// 	// 		for (z=0;z<Iz+2;z++) {
-			// 	// 			// printf("%d, ",XbackwardGhosts[y][z]);
-			// 	// 			printf("%d, ",data[x][y][z]);
-			// 	// 		}
-			// 	// 		printf("\n");
-			// 	// 	}
-			// 	// 	printf("\n");
-			// 	// }
-			// 	for (z=0;z<Iz+2;z++) {
-			// 		for (y=0;y<Iy+2;y++) {
-			// 			for (x=0;x<Ix+2;x++) {
-						
-			// 				// printf("%d, ",XbackwardGhosts[y][z]);
-			// 				printf("%d, ",data[x][y][z]);
-			// 			}
-			// 			printf("\n");
-			// 		}
-			// 		printf("\n");
-			// 	}
-			// }
+			unsigned char *tmp = data;
+			data = newData;
+			newData = tmp;
 
 		}
 	}
@@ -762,10 +623,7 @@ printf("rank %d", rank);
 		dx = coord[0]*Lx + MIN(coord[0], Rx);
 		dy = coord[1]*Ly + MIN(coord[1], Ry);
 		dz = coord[2]*Lz + MIN(coord[2], Rz);
-		// if (rank==0){
-		// 	printf("%d %d %d\n", dx, dy,dz);
-		// 	printf("the element: %d", totalProcessorResults[0][0][0][0]);
-		// }
+
 		printf("THE END\n");
 		for (t=0;t<=iterations;t++) {
 			for (x=0;x<Ix;x++) {
